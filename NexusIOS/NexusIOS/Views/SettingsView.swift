@@ -7,23 +7,49 @@ struct SettingsView: View {
     private var isAdmin: Bool { appState.adminStatus?.isAdmin == true }
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section("Server") {
-                    HStack {
-                        Text("Address")
-                        Spacer()
-                        Text(NexusAuthStore.shared.serverURL)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                    HStack {
-                        Text("User")
-                        Spacer()
-                        Text(appState.currentUser?.username ?? "—")
-                            .foregroundColor(.secondary)
+        List {
+            Section("Server") {
+                HStack {
+                    Text("Address")
+                    Spacer()
+                    Text(NexusAuthStore.shared.serverURL)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                HStack {
+                    Text("User")
+                    Spacer()
+                    Text(appState.currentUser?.username ?? "—")
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Section("Management") {
+                NavigationLink {
+                    UpdatesView()
+                } label: {
+                    Label {
+                        HStack {
+                            Text("Updates")
+                            Spacer()
+                            if let count = viewModel.updateCount, count > 0 {
+                                StatusBadge(text: "\(count)", color: .orange)
+                            }
+                        }
+                    } icon: {
+                        Image(systemName: "arrow.down.circle")
+                            .foregroundColor(.indigo)
                     }
                 }
+                NavigationLink {
+                    UsersView()
+                } label: {
+                    Label("Users", systemImage: "person.2")
+                        .foregroundColor(.primary)
+                }
+            } footer: {
+                Text("Managing users and installing updates requires admin access.")
+            }
 
                 if let error = viewModel.error {
                     Section {
@@ -77,9 +103,10 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .listStyle(.insetGrouped)
             .refreshable { await viewModel.load() }
             .task { await viewModel.load() }
-        }
     }
 
     private func logout() {

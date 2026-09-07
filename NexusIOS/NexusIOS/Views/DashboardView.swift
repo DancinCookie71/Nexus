@@ -6,41 +6,79 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: 14) {
                     if let error = viewModel.error {
                         ErrorBanner(error: error) {
                             Task { await viewModel.load() }
                         }
                     }
 
-                    OverallStatusCard(snapshot: viewModel.snapshot)
+                    OverallStatusCard(snapshot: viewModel.snapshot, system: viewModel.system)
 
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        MetricCard(
+                    HStack(spacing: 12) {
+                        RingGauge(
                             title: "CPU",
-                            value: cpuText,
-                            detail: viewModel.snapshot?.cpu.temperatureC.map { String(format: "%.1f °C", $0) } ?? "",
+                            percent: viewModel.snapshot?.cpu.percent ?? 0,
+                            detail: cpuDetail,
                             color: metricColor(for: viewModel.snapshot?.cpu.percent ?? 0, warning: 80, critical: 95)
                         )
-                        MetricCard(
+                        .nexusCard()
+                        RingGauge(
                             title: "Memory",
-                            value: memoryText,
-                            detail: Formatters.bytes(viewModel.snapshot?.memory.usedBytes ?? 0) + " used",
+                            percent: viewModel.snapshot?.memory.percent ?? 0,
+                            detail: memoryDetail,
                             color: metricColor(for: viewModel.snapshot?.memory.percent ?? 0, warning: 80, critical: 90)
                         )
+                        .nexusCard()
+                    }
+
+                    if viewModel.historyCount >= 2 {
+                        HistoryCard(cpu: viewModel.cpuHistory, memory: viewModel.memoryHistory)
+                    }
+
+                    if let info = viewModel.updateInfo, info.supported, info.updateCount > 0 {
+                        NavigationLink {
+                            UpdatesView()
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "arrow.down.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.orange)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(info.updateCount) update\(info.updateCount == 1 ? "" : "s") available")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundColor(.primary)
+                                    Text("Tap to review and install")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .nexusCard()
                     }
 
                     if let snapshot = viewModel.snapshot {
+                        if !snapshot.failedServices.isEmpty || !snapshot.filesystemErrors.isEmpty {
+                            WarningCard(snapshot: snapshot)
+                        }
                         DisksCard(disks: snapshot.disks)
                         NetworkCard(network: snapshot.network)
                         if let gpus = snapshot.gpus, !gpus.isEmpty {
                             GpuCard(gpus: gpus)
                         }
                         SystemInfoCard(system: viewModel.system)
+                        QuickLinksCard()
                     }
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom, 24)
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Dashboard")
             .refreshable { await viewModel.load() }
             .task {
@@ -53,66 +91,28 @@ struct DashboardView: View {
         }
     }
 
-    private var cpuText: String {
-        guard let cpu = viewModel.snapshot?.cpu else { return "--" }
-        return String(format: "%.1f%%", cpu.percent)
+    private var cpuDetail: String {
+        guard let cpu = viewModel.snapshot?.cpu else { return "" }
+        var parts: [String] = []
+        parts.append("load \(String(format: "%.2f", cpu.load1))")
+        if let temp = cpu.temperatureC {
+            parts.append(String(format: "%.1f °C", temp))
+        }
+        return parts.joined(separator: " · ")
     }
 
-    private var memoryText: String {
-        guard let mem = viewModel.snapshot?.memory else { return "--" }
-        return String(format: "%.1f%%", mem.percent)
+    private var memoryDetail: String {
+        guard let mem = viewModel.snapshot?.memory else { return "" }
+        return Formatters.bytes(mem.usedBytes) + " of " + Formatters.bytes(mem.totalBytes)
     }
 }
 
 struct OverallStatusCard: View {
     let snapshot: HealthSnapshot?
-
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: statusIcon)
-                .font(.system(size: 32))
-                .foregroundColor(statusColor)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Overall Status")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text(snapshot?.overall.uppercased() ?? "UNKNOWN")
-                    .font(.title2.weight(.bold))
-                    .foregroundColor(statusColor)
-                Text(summary)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-            }
-            Spacer()
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(statusColor.opacity(0.08))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(statusColor.opacity(0.2), lineWidth: 1)
-        )
-    }
+    let system: SystemStatsResponse?
 
     private var statusColor: Color {
-        switch snapshot?.overall {
-        case "healthy": return .green
-        case "warning": return .orange
-        case "critical": return .red
-        default: return .gray
-        }
-    }
-
-    private var statusIcon: String {
-        switch snapshot?.overall {
-        case "healthy": return "checkmark.circle.fill"
-        case "warning": return "exclamationmark.triangle.fill"
-        case "critical": return "xmark.octagon.fill"
-        default: return "questionmark.circle.fill"
-        }
+        NexusTheme.statusColor(snapshot?.overall)
     }
 
     private var summary: String {
@@ -123,34 +123,115 @@ struct OverallStatusCard: View {
         if snapshot.updateCount > 0 { parts.append("\(snapshot.updateCount) updates") }
         return parts.isEmpty ? "All systems operating normally" : parts.joined(separator: " · ")
     }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: NexusTheme.statusIcon(snapshot?.overall))
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(statusColor.opacity(0.9)))
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Overall Status")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.white.opacity(0.85))
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                Text(snapshot?.overall.capitalized ?? "Unknown")
+                    .font(.system(.title2, design: .rounded, weight: .bold))
+                    .foregroundColor(.white)
+                Text(summary)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.85))
+                    .lineLimit(2)
+                if let hostname = system?.hostname {
+                    Text(hostname)
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(.white.opacity(0.7))
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("UPTIME")
+                    .font(.caption2.weight(.bold))
+                    .foregroundColor(.white.opacity(0.7))
+                Text(Formatters.uptime(snapshot?.uptimeSeconds ?? 0))
+                    .font(.system(.callout, design: .rounded, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: NexusTheme.cardCornerRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [statusColor, statusColor.opacity(0.75)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .shadow(color: statusColor.opacity(0.3), radius: 10, x: 0, y: 4)
+    }
 }
 
-struct MetricCard: View {
-    let title: String
-    let value: String
-    let detail: String
-    let color: Color
+struct HistoryCard: View {
+    let cpu: [MetricSample]
+    let memory: [MetricSample]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Live Activity", systemImage: "chart.xyaxis.line")
+            HStack(spacing: 16) {
+                Sparkline(data: cpu.map { $0.value }, color: .indigo)
+                    .frame(height: 44)
+                Sparkline(data: memory.map { $0.value }, color: .cyan)
+                    .frame(height: 44)
+            }
+            HStack {
+                legend(color: .indigo, label: "CPU")
+                Spacer()
+                legend(color: .cyan, label: "Memory")
+            }
+        }
+        .nexusCard()
+    }
+
+    private func legend(color: Color, label: String) -> some View {
+        HStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color)
+                .frame(width: 12, height: 4)
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+
+struct WarningCard: View {
+    let snapshot: HealthSnapshot
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .textCase(.uppercase)
-                .tracking(0.5)
-            Text(value)
-                .font(.system(.title, design: .rounded, weight: .bold))
-                .foregroundColor(color)
-            Text(detail)
-                .font(.caption2)
-                .foregroundColor(.secondary)
-                .lineLimit(1)
-            Spacer()
+            if !snapshot.failedServices.isEmpty {
+                Label("\(snapshot.failedServices.count) failed service\(snapshot.failedServices.count == 1 ? "" : "s")", systemImage: "xmark.octagon.fill")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(.red)
+                Text(snapshot.failedServices.joined(separator: ", "))
+                    .font(.caption2.monospaced())
+                    .foregroundColor(.secondary)
+                    .lineLimit(3)
+            }
+            if !snapshot.filesystemErrors.isEmpty {
+                Label("\(snapshot.filesystemErrors.count) filesystem error\(snapshot.filesystemErrors.count == 1 ? "" : "s")", systemImage: "externaldrive.badge.exclamationmark")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(.orange)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .nexusCard()
     }
 }
 
@@ -164,28 +245,18 @@ struct DisksCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Storage")
-                .font(.headline)
+            SectionHeader(title: "Storage", systemImage: "internaldrive.fill")
             ForEach(uniqueDisks, id: \.device) { disk in
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(disk.mountpoint)
-                            .font(.subheadline.weight(.semibold))
-                        Text(Formatters.bytes(disk.usedBytes) + " / " + Formatters.bytes(disk.totalBytes))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    Text(String(format: "%.1f%%", disk.percent))
-                        .font(.system(.callout, design: .rounded, weight: .bold))
-                        .foregroundColor(metricColor(for: disk.percent, warning: 85, critical: 95))
-                }
-                .padding(.vertical, 4)
+                LabeledProgressBar(
+                    title: disk.mountpoint,
+                    subtitle: Formatters.bytes(disk.usedBytes) + " of " + Formatters.bytes(disk.totalBytes)
+                        + (disk.smartStatus.map { " · SMART \($0)" } ?? ""),
+                    percent: disk.percent,
+                    color: metricColor(for: disk.percent, warning: 85, critical: 95)
+                )
             }
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .nexusCard()
     }
 }
 
@@ -194,12 +265,20 @@ struct NetworkCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Network")
-                .font(.headline)
-            HStack {
-                NetworkMetric(label: "Upload", value: network.totalBytesSentPerSec)
-                Spacer()
-                NetworkMetric(label: "Download", value: network.totalBytesRecvPerSec)
+            SectionHeader(title: "Network", systemImage: "network")
+            HStack(spacing: 12) {
+                StatTile(
+                    systemImage: "arrow.up",
+                    title: "Upload",
+                    value: Formatters.bytesPerSecond(network.totalBytesSentPerSec),
+                    color: .indigo
+                )
+                StatTile(
+                    systemImage: "arrow.down",
+                    title: "Download",
+                    value: Formatters.bytesPerSecond(network.totalBytesRecvPerSec),
+                    color: .cyan
+                )
             }
             if let latency = network.latencyMs {
                 Text("Latency: \(String(format: "%.1f", latency)) ms")
@@ -207,24 +286,7 @@ struct NetworkCard: View {
                     .foregroundColor(.secondary)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-}
-
-struct NetworkMetric: View {
-    let label: String
-    let value: Double
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Text(Formatters.bytesPerSecond(value))
-                .font(.callout.weight(.semibold))
-        }
+        .nexusCard()
     }
 }
 
@@ -233,13 +295,13 @@ struct GpuCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("GPU")
-                .font(.headline)
+            SectionHeader(title: "GPU", systemImage: "cpu.fill")
             ForEach(gpus, id: \.name) { gpu in
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(gpu.name)
                             .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
                         if let temp = gpu.temperatureC {
                             Text(String(format: "%.1f °C", temp))
                                 .font(.caption)
@@ -256,9 +318,7 @@ struct GpuCard: View {
                 .padding(.vertical, 4)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .nexusCard()
     }
 }
 
@@ -267,8 +327,7 @@ struct SystemInfoCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("System")
-                .font(.headline)
+            SectionHeader(title: "System", systemImage: "server.rack")
             LabeledValue(label: "Hostname", value: system?.hostname)
             LabeledValue(label: "OS", value: system?.os)
             LabeledValue(label: "Kernel", value: system?.kernel)
@@ -279,34 +338,39 @@ struct SystemInfoCard: View {
             if let temp = system?.temperatureCelsius {
                 LabeledValue(label: "Temperature", value: String(format: "%.1f °C", temp))
             }
-            LabeledValue(label: "Uptime", value: Formatters.uptime(system?.uptimeSeconds ?? 0))
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .nexusCard()
     }
 }
 
-struct LabeledValue: View {
-    let label: String
-    let value: String?
-
+struct QuickLinksCard: View {
     var body: some View {
-        HStack {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Spacer()
-            Text(value ?? "—")
-                .font(.subheadline)
-                .multilineTextAlignment(.trailing)
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "Manage", systemImage: "slider.horizontal.3")
+            NavigationLink {
+                ProcessesView()
+            } label: {
+                MoreRow(title: "Processes", systemImage: "square.stack.3d.up", color: .blue)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.plain)
+            Divider()
+            NavigationLink {
+                UpdatesView()
+            } label: {
+                MoreRow(title: "Updates", systemImage: "arrow.down.circle.fill", color: .orange)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.plain)
+            Divider()
+            NavigationLink {
+                UsersView()
+            } label: {
+                MoreRow(title: "Users", systemImage: "person.2.fill", color: .indigo)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.plain)
         }
-        .padding(.vertical, 2)
+        .nexusCard()
     }
-}
-
-func metricColor(for value: Double, warning: Double, critical: Double) -> Color {
-    if value >= critical { return .red }
-    if value >= warning { return .orange }
-    return .green
 }

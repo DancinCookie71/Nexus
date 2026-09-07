@@ -512,7 +512,44 @@ struct SettingUpdateRequest: Codable {
 }
 
 // MARK: - Updates
-struct UpdatesResponse: Codable {
+struct UpdatesRequest: Codable {
+    let reboot: Bool
+}
+
+// MARK: - Features
+struct FeaturesResponse: Codable {
+    let terminal: Bool
+    let serviceManagement: Bool
+    let processes: Bool
+    let users: Bool
+    let logs: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case terminal, processes, users, logs
+        case serviceManagement = "service_management"
+    }
+}
+
+// MARK: - Updates
+struct UpdateInfoResponse: Codable {
+    let supported: Bool
+    let packageManager: String?
+    let updateCount: Int
+    let packages: [String]
+    let error: String?
+    let lastChecked: String?
+    let rebootRequired: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case supported, packages, error
+        case packageManager = "package_manager"
+        case updateCount = "update_count"
+        case lastChecked = "last_checked"
+        case rebootRequired = "reboot_required"
+    }
+}
+
+struct UpdateOperationResponse: Codable {
     let success: Bool
     let message: String
     let rebootScheduled: Bool
@@ -523,6 +560,90 @@ struct UpdatesResponse: Codable {
     }
 }
 
-struct UpdatesRequest: Codable {
-    let reboot: Bool
+// MARK: - Processes
+struct ProcessInfo: Codable, Identifiable {
+    var id: Int { pid }
+    let pid: Int
+    let name: String
+    let username: String
+    let cpuPercent: Double
+    let memoryPercent: Double
+    let memoryBytes: Int64
+    let status: String
+    let command: String
+
+    enum CodingKeys: String, CodingKey {
+        case pid, name, username, status, command
+        case cpuPercent = "cpu_percent"
+        case memoryPercent = "memory_percent"
+        case memoryBytes = "memory_bytes"
+    }
+}
+
+struct ProcessListResponse: Codable {
+    let processes: [ProcessInfo]
+    let total: Int
+    let running: Int
+    let sleeping: Int
+    let cpuPercent: Double
+    let memoryPercent: Double
+    let loadAverage: [Double]
+
+    enum CodingKeys: String, CodingKey {
+        case processes, total, running, sleeping
+        case cpuPercent = "cpu_percent"
+        case memoryPercent = "memory_percent"
+        case loadAverage = "load_average"
+    }
+}
+
+struct ProcessKillRequest: Codable {
+    let signal: String
+}
+
+// MARK: - UNIX Users
+struct UnixUserInfo: Codable, Identifiable {
+    var id: String { username }
+    let username: String
+    let fullName: String
+    let home: String
+    let shell: String
+    let uid: Int
+    let isAdmin: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case username, home, shell, uid
+        case fullName = "full_name"
+        case isAdmin = "is_admin"
+    }
+}
+
+struct UnixUserCreateRequest: Codable {
+    let username: String
+    let fullName: String
+    let password: String
+    let shell: String
+
+    enum CodingKeys: String, CodingKey {
+        case username, password, shell
+        case fullName = "full_name"
+    }
+}
+
+struct UnixUserPasswordRequest: Codable {
+    let password: String
+}
+
+struct UnixUserAdminRequest: Codable {
+    let admin: Bool
+}
+
+// MARK: - File Archives
+struct FileExtractRequest: Codable {
+    let path: String
+}
+
+struct FileArchiveRequest: Codable {
+    let paths: [String]
+    let name: String
 }

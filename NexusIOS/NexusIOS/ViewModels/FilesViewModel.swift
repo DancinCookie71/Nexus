@@ -155,3 +155,40 @@ final class FilesViewModel: ObservableObject {
         }
     }
 }
+
+extension FilesViewModel {
+    func extract(entry: FileEntry) async -> String? {
+        do {
+            let response = try await NexusAPI.shared.extractArchive(path: entry.path)
+            if let dest = response.message.components(separatedBy: "Extracted to ").last, dest != response.message {
+                await load(path: dest)
+            } else {
+                await load()
+            }
+            return nil
+        } catch let err as NexusError {
+            return err.localizedDescription
+        } catch {
+            return NexusError.networkError(error).localizedDescription
+        }
+    }
+
+    func compress(entry: FileEntry, name: String) async -> String? {
+        if let validationError = PathUtilities.validateName(name) {
+            return validationError
+        }
+        let lower = name.lowercased()
+        guard lower.hasSuffix(".zip") || lower.hasSuffix(".tar.gz") || lower.hasSuffix(".tgz") else {
+            return "Archive name must end with .zip, .tar.gz, or .tgz."
+        }
+        do {
+            _ = try await NexusAPI.shared.createArchive(paths: [entry.path], name: name)
+            await load()
+            return nil
+        } catch let err as NexusError {
+            return err.localizedDescription
+        } catch {
+            return NexusError.networkError(error).localizedDescription
+        }
+    }
+}

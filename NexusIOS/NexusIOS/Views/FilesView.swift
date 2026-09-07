@@ -22,6 +22,8 @@ struct FilesView: View {
     @State private var pendingUploadData: Data?
     @State private var pendingUploadName: String?
     @State private var showOverwriteConfirmation = false
+    @State private var compressEntry: FileEntry?
+    @State private var compressName = ""
 
     private var isAdmin: Bool { appState.adminStatus?.isAdmin == true }
 
@@ -79,6 +81,22 @@ struct FilesView: View {
                             if entry.isFile {
                                 Button("Edit") { editorPath = entry.path }
                                 Button("Download") { download(entry: entry) }
+                            }
+                            if entry.isFile && PathUtilities.isArchive(entry.name) {
+                                Button("Extract Here") {
+                                    Task {
+                                        if let message = await viewModel.extract(entry: entry) {
+                                            actionError = message
+                                            showActionError = true
+                                        } else {
+                                            Haptics.medium()
+                                        }
+                                    }
+                                }
+                            }
+                            Button("Compress…") {
+                                compressEntry = entry
+                                compressName = PathUtilities.suggestedArchiveName(for: entry)
                             }
                             if isAdmin {
                                 Button("Rename") { showOptions = entry }
@@ -220,6 +238,31 @@ struct FilesView: View {
                 }
             } message: {
                 Text("A file with that name already exists. Overwrite it?")
+            }
+            .alert(
+                "Compress",
+                isPresented: Binding(
+                    get: { compressEntry != nil },
+                    set: { if !$0 { compressEntry = nil } }
+                )
+            ) {
+                TextField("Archive name (.tar.gz or .zip)", text: $compressName)
+                Button("Cancel", role: .cancel) { compressEntry = nil }
+                Button("Create") {
+                    guard let entry = compressEntry else { return }
+                    let name = compressName
+                    compressEntry = nil
+                    Task {
+                        if let message = await viewModel.compress(entry: entry, name: name) {
+                            actionError = message
+                            showActionError = true
+                        } else {
+                            Haptics.medium()
+                        }
+                    }
+                }
+            } message: {
+                Text(compressEntry.map { "Create an archive of \($0.name)?" } ?? "")
             }
             .alert("Error", isPresented: $showActionError) {
                 Button("OK") { actionError = nil }

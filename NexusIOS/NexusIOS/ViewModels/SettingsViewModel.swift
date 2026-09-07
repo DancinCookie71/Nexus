@@ -6,6 +6,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: NexusError?
     @Published var saveMessage: String?
+    @Published var updateCount: Int?
 
     func load() async {
         isLoading = true
@@ -18,6 +19,18 @@ final class SettingsViewModel: ObservableObject {
             error = err
         } catch {
             self.error = .networkError(error)
+        }
+        await loadUpdateCount()
+    }
+
+    private func loadUpdateCount() async {
+        do {
+            let info = try await NexusAPI.shared.updateInfo()
+            updateCount = info.supported ? info.updateCount : nil
+        } catch NexusError.forbidden {
+            updateCount = nil
+        } catch {
+            updateCount = nil
         }
     }
 

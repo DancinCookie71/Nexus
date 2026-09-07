@@ -42,3 +42,14 @@ enum PathUtilities {
         return false
     }
 }
+
+extension PathUtilities {
+    static func isArchive(_ name: String) -> Bool {
+        let lower = name.lowercased()
+        return lower.hasSuffix(".zip") || lower.hasSuffix(".tar") || lower.hasSuffix(".tar.gz") || lower.hasSuffix(".tgz")
+    }
+
+    static func suggestedArchiveName(for entry: FileEntry) -> String {
+        "\(entry.name).tar.gz"
+    }
+}

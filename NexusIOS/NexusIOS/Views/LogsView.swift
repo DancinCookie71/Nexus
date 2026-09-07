@@ -7,62 +7,60 @@ struct LogsView: View {
     private var isAdmin: Bool { appState.adminStatus?.isAdmin == true }
 
     var body: some View {
-        NavigationStack {
-            List {
+        List {
+            Section {
+                TextField("Service", text: $viewModel.serviceName)
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+                    .disabled(!isAdmin)
+            }
+
+            if let error = viewModel.error {
                 Section {
-                    TextField("Service", text: $viewModel.serviceName)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .disabled(!isAdmin)
-                }
-
-                if let error = viewModel.error {
-                    Section {
-                        ErrorBanner(error: error) {
-                            Task { await viewModel.load() }
-                        }
-                    }
-                }
-
-                if viewModel.isLoading && viewModel.entries.isEmpty {
-                    Section {
-                        ProgressView()
-                            .frame(maxWidth: .infinity, minHeight: 120)
-                    }
-                } else if viewModel.entries.isEmpty {
-                    Section {
-                        EmptyStateView(title: "No log entries", systemImage: "doc.text")
-                    }
-                } else {
-                    ForEach(viewModel.entries) { entry in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(entry.timestamp?.replacingOccurrences(of: "T", with: " ").prefix(19) ?? "—")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text(entry.priorityName)
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundColor(priorityColor(entry.priority))
-                            }
-                            Text(entry.message)
-                                .font(.caption)
-                                .textSelection(.enabled)
-                        }
-                        .padding(.vertical, 2)
+                    ErrorBanner(error: error) {
+                        Task { await viewModel.load() }
                     }
                 }
             }
-            .navigationTitle("Logs")
-            .refreshable { await viewModel.load() }
-            .task { await viewModel.load() }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Load") {
-                        Task { await viewModel.load() }
-                    }
-                    .disabled(!isAdmin)
+
+            if viewModel.isLoading && viewModel.entries.isEmpty {
+                Section {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 120)
                 }
+            } else if viewModel.entries.isEmpty {
+                Section {
+                    EmptyStateView(title: "No log entries", systemImage: "doc.text")
+                }
+            } else {
+                ForEach(viewModel.entries) { entry in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(entry.timestamp?.replacingOccurrences(of: "T", with: " ").prefix(19) ?? "—")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            StatusBadge(text: entry.priorityName, color: priorityColor(entry.priority))
+                        }
+                        Text(entry.message)
+                            .font(.caption)
+                            .textSelection(.enabled)
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle("Logs")
+        .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await viewModel.load() }
+        .task { await viewModel.load() }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Load") {
+                    Task { await viewModel.load() }
+                }
+                .disabled(!isAdmin)
             }
         }
     }

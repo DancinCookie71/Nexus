@@ -8,40 +8,54 @@ struct AdminModeView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
 
+    private var isAdmin: Bool { appState.adminStatus?.isAdmin == true }
+    private var isImplicitAdmin: Bool {
+        isAdmin
+            && appState.adminStatus?.expiresAt == nil
+            && appState.adminStatus?.sudoUsername == appState.currentUser?.username
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                Section {
+                Section("Current context") {
                     HStack {
-                        Text("Current context")
+                        Text("Operating as")
                         Spacer()
-                        Text(appState.adminStatus?.isAdmin == true
-                             ? appState.adminStatus?.sudoUsername ?? "admin"
-                             : "nexus")
+                        Text(appState.adminStatus?.sudoUsername ?? appState.currentUser?.username ?? "—")
                             .fontWeight(.semibold)
-                            .foregroundColor(appState.adminStatus?.isAdmin == true ? .green : .blue)
+                            .foregroundColor(isAdmin ? .green : .indigo)
                     }
-                    if appState.adminStatus?.isAdmin == true, let expiresAt = appState.adminStatus?.expiresAt {
+                    if isAdmin {
                         HStack {
                             Text("Expires")
                             Spacer()
-                            Text(expiresAt, style: .relative)
+                            Text(expiryText)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
-                }
-
-                if appState.adminStatus?.isAdmin != true {
-                    Section("Authenticate") {
-                        TextField("System user", text: $username)
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
-                        SecureField("Password", text: $password)
+                    if isImplicitAdmin {
+                        Text("You have full access through your UNIX account on the server.")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
                     }
                 }
 
-                if let errorMessage = errorMessage {
+                if !isAdmin {
+                    Section {
+                        TextField("System user", text: $username)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        SecureField("Password", text: $password)
+                    } header: {
+                        Text("Elevate as a different sudo user")
+                    } footer: {
+                        Text("Your UNIX account is already admin if it is in the server's sudo group. Use this only to operate as another sudo user.")
+                    }
+                }
+
+                if let errorMessage {
                     Section {
                         Text(errorMessage)
                             .foregroundColor(.red)
@@ -49,16 +63,18 @@ struct AdminModeView: View {
                     }
                 }
 
-                Section {
-                    if appState.adminStatus?.isAdmin == true {
+                if isAdmin && !isImplicitAdmin {
+                    Section {
                         Button(role: .destructive, action: revoke) {
                             HStack {
                                 Spacer()
-                                if isLoading { ProgressView() } else { Text("Disable Admin Mode") }
+                                if isLoading { ProgressView() } else { Text("Return to Personal Context") }
                                 Spacer()
                             }
                         }
-                    } else {
+                    }
+                } else if !isAdmin {
+                    Section {
                         Button(action: enable) {
                             HStack {
                                 Spacer()
@@ -70,14 +86,23 @@ struct AdminModeView: View {
                     }
                 }
             }
-            .navigationTitle("Admin Mode")
+            .navigationTitle("Admin Access")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+                    Button("Done") { dismiss() }
                 }
             }
         }
+        .presentationDetents([.medium, .large])
+    }
+
+    private var expiryText: String {
+        guard let expiresAt = appState.adminStatus?.expiresAt else { return "No expiry" }
+        if expiresAt.timeIntervalSinceNow > 5 * 365 * 24 * 3600 {
+            return "No expiry"
+        }
+        return expiresAt.formatted(.relative(presentation: .named))
     }
 
     private func enable() {
@@ -86,11 +111,14 @@ struct AdminModeView: View {
         Task {
             do {
                 try await appState.elevateAdmin(username: username, password: password)
+                Haptics.medium()
                 dismiss()
             } catch let err as NexusError {
                 errorMessage = err.localizedDescription
+                Haptics.error()
             } catch {
                 errorMessage = error.localizedDescription
+                Haptics.error()
             }
             isLoading = false
         }

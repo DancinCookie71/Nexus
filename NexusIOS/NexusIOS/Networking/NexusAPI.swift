@@ -288,19 +288,96 @@ final class NexusAPI {
 
     // MARK: - Updates
 
-    func updates() async throws -> UpdatesResponse {
+    func updateInfo() async throws -> UpdateInfoResponse {
         let request = try self.request(method: "GET", path: "api/v1/updates")
-        return try await fetch(UpdatesResponse.self, request: request)
+        return try await fetch(UpdateInfoResponse.self, request: request)
     }
 
-    func runUpdates(reboot: Bool) async throws -> UpdatesResponse {
+    func runUpdates(reboot: Bool) async throws -> UpdateOperationResponse {
         let request = try self.request(method: "POST", path: "api/v1/updates", body: UpdatesRequest(reboot: reboot))
-        return try await fetch(UpdatesResponse.self, request: request)
+        return try await fetch(UpdateOperationResponse.self, request: request)
     }
 
-    func reboot() async throws -> UpdatesResponse {
+    func reboot() async throws -> UpdateOperationResponse {
         let request = try self.request(method: "POST", path: "api/v1/updates/reboot")
-        return try await fetch(UpdatesResponse.self, request: request)
+        return try await fetch(UpdateOperationResponse.self, request: request)
+    }
+
+    // MARK: - Processes
+
+    func processes(limit: Int = 500) async throws -> ProcessListResponse {
+        let request = try self.request(method: "GET", path: "api/v1/processes", query: ["limit": String(limit)])
+        return try await fetch(ProcessListResponse.self, request: request)
+    }
+
+    func killProcess(pid: Int, signalName: String = "TERM") async throws {
+        let request = try self.request(
+            method: "POST",
+            path: "api/v1/processes/\(pid)/kill",
+            body: ProcessKillRequest(signal: signalName)
+        )
+        _ = try await fetchData(request: request)
+    }
+
+    // MARK: - UNIX Users
+
+    func unixUsers() async throws -> [UnixUserInfo] {
+        let request = try self.request(method: "GET", path: "api/v1/users")
+        return try await fetch([UnixUserInfo].self, request: request)
+    }
+
+    func createUnixUser(username: String, fullName: String, password: String, shell: String) async throws {
+        let request = try self.request(
+            method: "POST",
+            path: "api/v1/users",
+            body: UnixUserCreateRequest(username: username, fullName: fullName, password: password, shell: shell)
+        )
+        _ = try await fetchData(request: request)
+    }
+
+    func setUnixPassword(username: String, password: String) async throws {
+        let encoded = username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? username
+        let request = try self.request(
+            method: "POST",
+            path: "api/v1/users/\(encoded)/password",
+            body: UnixUserPasswordRequest(password: password)
+        )
+        _ = try await fetchData(request: request)
+    }
+
+    func setUnixUserAdmin(username: String, admin: Bool) async throws {
+        let encoded = username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? username
+        let request = try self.request(
+            method: "POST",
+            path: "api/v1/users/\(encoded)/admin",
+            body: UnixUserAdminRequest(admin: admin)
+        )
+        _ = try await fetchData(request: request)
+    }
+
+    func deleteUnixUser(username: String) async throws {
+        let encoded = username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? username
+        let request = try self.request(method: "DELETE", path: "api/v1/users/\(encoded)")
+        _ = try await fetchData(request: request)
+    }
+
+    // MARK: - File Archives
+
+    func extractArchive(path: String) async throws -> FileOperationResponse {
+        let request = try self.request(method: "POST", path: "api/v1/files/extract", body: FileExtractRequest(path: path))
+        return try await fetch(FileOperationResponse.self, request: request)
+    }
+
+    func createArchive(paths: [String], name: String) async throws -> FileOperationResponse {
+        let request = try self.request(method: "POST", path: "api/v1/files/archive", body: FileArchiveRequest(paths: paths, name: name))
+        return try await fetch(FileOperationResponse.self, request: request)
+    }
+
+    // MARK: - Features
+
+    func features() async throws -> FeaturesResponse {
+        let request = try self.request(method: "GET", path: "api/v1/settings/features")
+        return try await fetch(FeaturesResponse.self, request: request)
     }
 
     // MARK: - Settings

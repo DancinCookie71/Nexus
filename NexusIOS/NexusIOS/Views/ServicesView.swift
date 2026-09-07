@@ -85,39 +85,24 @@ struct ServiceRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(service.name)
                     .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.primary)
                 Text(service.description ?? service.subState ?? "")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
             Spacer()
-            Text(service.activeState?.capitalized ?? "—")
-                .font(.caption.weight(.bold))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(statusColor.opacity(0.15))
-                .foregroundColor(statusColor)
-                .cornerRadius(6)
+            StatusBadge(text: service.activeState?.capitalized ?? "—", color: statusColor)
         }
         .padding(.vertical, 4)
     }
 
     private var statusColor: Color {
-        switch service.activeState {
-        case "active": return .green
-        case "failed": return .red
-        case "inactive": return .gray
-        default: return .orange
-        }
+        NexusTheme.statusColor(service.activeState)
     }
 
     private var statusIcon: String {
-        switch service.activeState {
-        case "active": return "checkmark.circle.fill"
-        case "failed": return "xmark.circle.fill"
-        case "inactive": return "stop.circle.fill"
-        default: return "questionmark.circle.fill"
-        }
+        NexusTheme.statusIcon(service.activeState)
     }
 }
 
