@@ -24,7 +24,7 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Management") {
+            Section {
                 NavigationLink {
                     UpdatesView()
                 } label: {
@@ -47,6 +47,8 @@ struct SettingsView: View {
                     Label("Users", systemImage: "person.2")
                         .foregroundColor(.primary)
                 }
+            } header: {
+                Text("Management")
             } footer: {
                 Text("Managing users and installing updates requires admin access.")
             }

@@ -11,129 +11,151 @@ struct UsersView: View {
     private var isAdmin: Bool { appState.adminStatus?.isAdmin == true }
 
     var body: some View {
+        list
+            .navigationTitle("Users")
+            .navigationBarTitleDisplayMode(.inline)
+            .refreshable { await viewModel.load() }
+            .task { await viewModel.load() }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showCreateSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .disabled(!isAdmin)
+                }
+            }
+            .sheet(isPresented: $showCreateSheet) {
+                CreateUserSheet(viewModel: viewModel)
+            }
+            .sheet(item: $passwordUser) { user in
+                SetPasswordSheet(viewModel: viewModel, user: user)
+            }
+            .alert(
+                "Delete user?",
+                isPresented: Binding(
+                    get: { deleteConfirm != nil },
+                    set: { if !$0 { deleteConfirm = nil } }
+                )
+            ) {
+                Button("Cancel", role: .cancel) { deleteConfirm = nil }
+                Button("Delete", role: .destructive) { performDelete() }
+            } message: {
+                Text(deleteConfirm.map { "Delete account \"\($0.username)\"? This cannot be undone." } ?? "")
+            }
+            .confirmationDialog(
+                adminToggleConfirm.map { "\($0.grant ? "Grant" : "Revoke") admin for \($0.user.username)?" } ?? "",
+                isPresented: Binding(
+                    get: { adminToggleConfirm != nil },
+                    set: { if !$0 { adminToggleConfirm = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button(adminToggleConfirm?.grant == true ? "Grant Admin" : "Revoke Admin", role: adminToggleConfirm?.grant == true ? nil : .destructive) {
+                    performAdminToggle()
+                }
+                Button("Cancel", role: .cancel) { adminToggleConfirm = nil }
+            } message: {
+                Text("Admin access is granted through the server's sudo group.")
+            }
+    }
+
+    private var list: some View {
         List {
-            if let notice = viewModel.notice {
-                Section {
-                    Label(notice, systemImage: "checkmark.circle.fill")
-                        .font(.footnote)
-                        .foregroundColor(.green)
+            statusSections
+            accountSection
+        }
+        .listStyle(.insetGrouped)
+    }
+
+    @ViewBuilder
+    private var statusSections: some View {
+        if let notice = viewModel.notice {
+            Section {
+                Label(notice, systemImage: "checkmark.circle.fill")
+                    .font(.footnote)
+                    .foregroundColor(.green)
+            }
+        }
+        if let error = viewModel.error {
+            Section {
+                ErrorBanner(error: error) {
+                    Task { await viewModel.load() }
                 }
             }
+        }
+        if viewModel.isLoading && viewModel.users.isEmpty {
+            Section {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 120)
+            }
+        } else if viewModel.users.isEmpty {
+            Section {
+                EmptyStateView(title: "No user accounts", systemImage: "person.3")
+            }
+        }
+    }
 
-            if let error = viewModel.error {
-                Section {
-                    ErrorBanner(error: error) {
-                        Task { await viewModel.load() }
+    @ViewBuilder
+    private var accountSection: some View {
+        if !viewModel.users.isEmpty {
+            Section {
+                ForEach(viewModel.users) { user in
+                    Button {
+                        passwordUser = user
+                    } label: {
+                        UserRow(user: user, isCurrentUser: user.username == appState.currentUser?.username)
                     }
-                }
-            }
-
-            if viewModel.isLoading && viewModel.users.isEmpty {
-                Section {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 120)
-                }
-            } else if viewModel.users.isEmpty {
-                Section {
-                    EmptyStateView(title: "No user accounts", systemImage: "person.3")
-                }
-            } else {
-                Section("Local UNIX Accounts") {
-                    ForEach(viewModel.users) { user in
-                        Button {
-                            passwordUser = user
-                        } label: {
-                            UserRow(user: user, isCurrentUser: user.username == appState.currentUser?.username)
-                        }
-                        .buttonStyle(.plain)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if isAdmin {
-                                Button(role: .destructive) {
-                                    deleteConfirm = user
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                                Button {
-                                    adminToggleConfirm = (user, !user.isAdmin)
-                                } label: {
-                                    Label(user.isAdmin ? "Revoke Admin" : "Make Admin", systemImage: user.isAdmin ? "lock.open" : "crown")
-                                }
-                                .tint(user.isAdmin ? .orange : .indigo)
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if isAdmin {
+                            Button(role: .destructive) {
+                                deleteConfirm = user
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
+                            Button {
+                                adminToggleConfirm = (user, !user.isAdmin)
+                            } label: {
+                                Label(user.isAdmin ? "Revoke Admin" : "Make Admin", systemImage: user.isAdmin ? "lock.open" : "crown")
+                            }
+                            .tint(user.isAdmin ? .orange : .indigo)
                         }
-                        .disabled(!isAdmin)
                     }
-                } footer: {
-                    Text("Deleting an account keeps its home directory. You cannot delete the account you are operating as.")
+                    .disabled(!isAdmin)
                 }
+            } header: {
+                Text("Local UNIX Accounts")
+            } footer: {
+                Text("Deleting an account keeps its home directory. You cannot delete the account you are operating as.")
             }
         }
-        .navigationTitle("Users")
-        .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await viewModel.load() }
-        .task { await viewModel.load() }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showCreateSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .disabled(!isAdmin)
+    }
+
+    private func performDelete() {
+        guard let user = deleteConfirm else { return }
+        deleteConfirm = nil
+        Task {
+            if let message = await viewModel.delete(user) {
+                viewModel.notice = nil
+                viewModel.error = .apiError(message)
+            } else {
+                Haptics.medium()
             }
         }
-        .sheet(isPresented: $showCreateSheet) {
-            CreateUserSheet(viewModel: viewModel)
-        }
-        .sheet(item: $passwordUser) { user in
-            SetPasswordSheet(viewModel: viewModel, user: user)
-        }
-        .alert(
-            "Delete user?",
-            isPresented: Binding(
-                get: { deleteConfirm != nil },
-                set: { if !$0 { deleteConfirm = nil } }
-            )
-        ) {
-            Button("Cancel", role: .cancel) { deleteConfirm = nil }
-            Button("Delete", role: .destructive) {
-                guard let user = deleteConfirm else { return }
-                deleteConfirm = nil
-                Task {
-                    if let message = await viewModel.delete(user) {
-                        viewModel.notice = nil
-                        viewModel.error = .apiError(message)
-                    } else {
-                        Haptics.medium()
-                    }
-                }
+    }
+
+    private func performAdminToggle() {
+        guard let target = adminToggleConfirm else { return }
+        adminToggleConfirm = nil
+        Task {
+            if let message = await viewModel.setAdmin(target.user, admin: target.grant) {
+                viewModel.notice = nil
+                viewModel.error = .apiError(message)
+            } else {
+                Haptics.medium()
             }
-        } message: {
-            Text(deleteConfirm.map { "Delete account \"\($0.username)\"? This cannot be undone." } ?? "")
-        }
-        .confirmationDialog(
-            adminToggleConfirm.map { "\($0.grant ? "Grant" : "Revoke") admin for \($0.user.username)?" } ?? "",
-            isPresented: Binding(
-                get: { adminToggleConfirm != nil },
-                set: { if !$0 { adminToggleConfirm = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button(adminToggleConfirm?.grant == true ? "Grant Admin" : "Revoke Admin", role: adminToggleConfirm?.grant == true ? nil : .destructive) {
-                guard let target = adminToggleConfirm else { return }
-                adminToggleConfirm = nil
-                Task {
-                    if let message = await viewModel.setAdmin(target.user, admin: target.grant) {
-                        viewModel.notice = nil
-                        viewModel.error = .apiError(message)
-                    } else {
-                        Haptics.medium()
-                    }
-                }
-            }
-            Button("Cancel", role: .cancel) { adminToggleConfirm = nil }
-        } message: {
-            Text("Admin access is granted through the server's sudo group.")
         }
     }
 }
@@ -150,7 +172,7 @@ struct UserRow: View {
                 .frame(width: 36, height: 36)
                 .background(Circle().fill(user.isAdmin ? Color.indigo : Color.gray.opacity(0.6)))
             VStack(alignment: .leading, spacing: 2) {
-                Text(user.fullName.isEmpty ? user.username : user.fullName)
+                Text(displayName)
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.primary)
                 Text(user.username)
@@ -158,18 +180,27 @@ struct UserRow: View {
                     .foregroundColor(.secondary)
             }
             Spacer()
-            if user.isAdmin {
-                StatusBadge(text: "Admin", color: .indigo)
-            }
-            if isCurrentUser {
-                StatusBadge(text: "You", color: .gray)
-            }
+            badges
         }
         .padding(.vertical, 2)
     }
 
+    private var displayName: String {
+        user.fullName.isEmpty ? user.username : user.fullName
+    }
+
     private var initial: String {
-        String((user.fullName.isEmpty ? user.username : user.fullName).prefix(1)).uppercased()
+        String(displayName.prefix(1)).uppercased()
+    }
+
+    @ViewBuilder
+    private var badges: some View {
+        if user.isAdmin {
+            StatusBadge(text: "Admin", color: .indigo)
+        }
+        if isCurrentUser {
+            StatusBadge(text: "You", color: .gray)
+        }
     }
 }
 

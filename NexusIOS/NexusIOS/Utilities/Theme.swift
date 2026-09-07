@@ -38,8 +38,11 @@ enum NexusTheme {
     }
 }
 
-struct CardBackground: ViewModifier {
-    var cornerRadius: CGFloat = NexusTheme.cardCornerRadius
+func metricColor(for value: Double, warning: Double, critical: Double) -> Color {
+    NexusTheme.metricColor(for: value, warning: warning, critical: critical)
+}
+
+struct CardBackground: ViewModifier {    var cornerRadius: CGFloat = NexusTheme.cardCornerRadius
 
     func body(content: Content) -> some View {
         content
