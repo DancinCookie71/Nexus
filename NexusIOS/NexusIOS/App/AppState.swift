@@ -10,6 +10,7 @@ final class AppState: ObservableObject {
     @Published var currentUser: NexusUser?
     @Published var adminStatus: AdminStatusResponse?
     @Published var lastError: NexusError?
+    @Published var sessionNotice: String?
 
     private var timer: Timer?
 
@@ -34,11 +35,13 @@ final class AppState: ObservableObject {
         } catch {
             isAuthenticated = false
             currentUser = nil
+            sessionNotice = "Session expired. Please sign in again."
             _ = try? NexusAuthStore.shared.clearToken()
         }
     }
 
     func login(username: String, password: String, serverURL: String? = nil, rememberServer: Bool = true) async throws {
+        sessionNotice = nil
         if let serverURL {
             try NexusAuthStore.shared.saveServerURL(serverURL, remember: rememberServer)
         }

@@ -46,7 +46,7 @@ Nexus Panel manages a single server over an authenticated web UI and REST/WebSoc
 
 - **Backend** (`backend/`): Python 3.11+, FastAPI, SQLAlchemy + SQLite, Pydantic-validated inputs, Argon2id hashing.
 - **Frontend** (`frontend/`): server-served static HTML/CSS/JS, no build step.
-- **iOS** (`NexusIOS/`): SwiftUI app defined by an XcodeGen `project.yml`.
+- **iOS** (`NexusIOS/`): SwiftUI app defined by an XcodeGen `project.yml`; SwiftTerm (MIT) provides the terminal emulator.
 
 Both clients consume the same `/api/v1/` endpoints.
 

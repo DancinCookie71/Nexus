@@ -22,6 +22,30 @@ struct SettingsView: View {
                     Text(appState.currentUser?.username ?? "—")
                         .foregroundColor(.secondary)
                 }
+                if let expiresAt = appState.adminStatus?.expiresAt, appState.adminStatus?.isAdmin == true {
+                    HStack {
+                        Text("Admin expires")
+                        Spacer()
+                        Text(expiresAt.formatted(.relative(presentation: .named)))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+
+            Section("About") {
+                HStack {
+                    Text("Version")
+                    Spacer()
+                    Text(appVersion)
+                        .foregroundColor(.secondary)
+                }
+                HStack {
+                    Text("Build")
+                    Spacer()
+                    Text(appBuild)
+                        .foregroundColor(.secondary)
+                }
             }
 
             Section {
@@ -109,6 +133,14 @@ struct SettingsView: View {
             .listStyle(.insetGrouped)
             .refreshable { await viewModel.load() }
             .task { await viewModel.load() }
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
+
+    private var appBuild: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
     }
 
     private func logout() {

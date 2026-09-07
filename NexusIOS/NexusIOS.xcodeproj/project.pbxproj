@@ -49,6 +49,7 @@
 		DB132553A0905B68E8859A10 /* UpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9EA3C8F88AB35CC6F2E511B /* UpdatesView.swift */; };
 		E801C84A54766EDB0D2235E1 /* UsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 789F39DD86DB228F2A65D016 /* UsersView.swift */; };
 		1AC74CB1144611B08C7F830B /* UITestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E7873F050ECD69F3CF7121 /* UITestHelpers.swift */; };
+		30C150E61AC910519AB80BD3 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 5B6EDD47E46CECD7F29EC4D3 /* SwiftTerm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -109,6 +110,16 @@
 		C6E7873F050ECD69F3CF7121 /* UITestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestHelpers.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		3F5AB7A14980B8068AC5AA81 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				30C150E61AC910519AB80BD3 /* SwiftTerm in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 /* Begin PBXGroup section */
 		06DDA618E717A4E967A21985 = {
 			isa = PBXGroup;
@@ -249,6 +260,7 @@
 			buildConfigurationList = BBBAAF0DE016E1B7BAA16F20 /* Build configuration list for PBXNativeTarget "NexusIOS" */;
 			buildPhases = (
 				72AA9BF17D88AF471BFF8218 /* Sources */,
+				3F5AB7A14980B8068AC5AA81 /* Frameworks */,
 				A5A7FC1A6792F4C9F4C7EB8E /* Resources */,
 			);
 			buildRules = (
@@ -257,6 +269,7 @@
 			);
 			name = NexusIOS;
 			packageProductDependencies = (
+				5B6EDD47E46CECD7F29EC4D3 /* SwiftTerm */,
 			);
 			productName = NexusIOS;
 			productReference = A9C04D214D94D0EE1DE7222C /* NexusIOS.app */;
@@ -282,6 +295,16 @@
 		};
 /* End PBXNativeTarget section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		2F58C8E5E7B8A11B6550C61D /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 /* Begin PBXProject section */
 		EC565A7279FEB6B73E357515 /* Project object */ = {
 			isa = PBXProject;
@@ -302,6 +325,9 @@
 				en,
 			);
 			mainGroup = 06DDA618E717A4E967A21985;
+			packageReferences = (
+				2F58C8E5E7B8A11B6550C61D /* XCRemoteSwiftPackageReference "SwiftTerm" */,
+			);
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CC45C0B56412D8178FF9B81F /* Products */;
@@ -383,6 +409,13 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin XCSwiftPackageProductDependency section */
+		5B6EDD47E46CECD7F29EC4D3 /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2F58C8E5E7B8A11B6550C61D /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
+		};
+/* End XCSwiftPackageProductDependency section */
 /* Begin PBXTargetDependency section */
 		5CEB51FD72A4E10EDC06A4F1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;

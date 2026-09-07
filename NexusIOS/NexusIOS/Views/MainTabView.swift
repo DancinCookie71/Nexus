@@ -1,10 +1,35 @@
 import SwiftUI
 
+enum MainSection: Hashable {
+    case dashboard, services, files, terminal
+    case processes, users, updates, logs, settings
+}
+
 struct MainTabView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showAdminSheet = false
+    @State private var sidebarSelection: MainSection? = .dashboard
 
     var body: some View {
+        Group {
+            if horizontalSizeClass == .regular {
+                iPadLayout
+            } else {
+                iPhoneLayout
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            AdminBar(showAdminSheet: $showAdminSheet)
+                .padding(.horizontal)
+                .padding(.top, 6)
+        }
+        .sheet(isPresented: $showAdminSheet) {
+            AdminModeView()
+        }
+    }
+
+    private var iPhoneLayout: some View {
         TabView {
             DashboardView()
                 .tabItem { Label("Status", systemImage: "waveform.path.ecg.rectangle.fill") }
@@ -17,13 +42,66 @@ struct MainTabView: View {
             MoreView()
                 .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            AdminBar(showAdminSheet: $showAdminSheet)
-                .padding(.horizontal)
-                .padding(.top, 6)
+    }
+
+    private var iPadLayout: some View {
+        NavigationSplitView {
+            List(selection: $sidebarSelection) {
+                Section("Server") {
+                    sidebarRow("Dashboard", icon: "waveform.path.ecg.rectangle.fill", color: .indigo, section: .dashboard)
+                    sidebarRow("Services", icon: "gearshape.2.fill", color: .blue, section: .services)
+                    sidebarRow("Processes", icon: "square.stack.3d.up", color: .teal, section: .processes)
+                    sidebarRow("Users", icon: "person.2.fill", color: .indigo, section: .users)
+                    sidebarRow("Updates", icon: "arrow.down.circle.fill", color: .orange, section: .updates)
+                }
+                Section("Workspaces") {
+                    sidebarRow("Files", icon: "folder.fill", color: .yellow, section: .files)
+                    sidebarRow("Terminal", icon: "terminal.fill", color: .green, section: .terminal)
+                    sidebarRow("Logs", icon: "doc.text.fill", color: .gray, section: .logs)
+                }
+                Section("Panel") {
+                    sidebarRow("Settings", icon: "gearshape.fill", color: .gray, section: .settings)
+                }
+            }
+            .listStyle(.sidebar)
+            .navigationTitle("Nexus")
+        } detail: {
+            detailView
         }
-        .sheet(isPresented: $showAdminSheet) {
-            AdminModeView()
+    }
+
+    @ViewBuilder
+    private func sidebarRow(_ title: String, icon: String, color: Color, section: MainSection) -> some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: icon)
+                .foregroundColor(color)
+        }
+        .tag(section)
+    }
+
+    @ViewBuilder
+    private var detailView: some View {
+        switch sidebarSelection {
+        case .services:
+            ServicesView()
+        case .files:
+            FilesView()
+        case .terminal:
+            TerminalView()
+        case .processes:
+            ProcessesView()
+        case .users:
+            UsersView()
+        case .updates:
+            UpdatesView()
+        case .logs:
+            LogsView()
+        case .settings:
+            SettingsView()
+        default:
+            DashboardView()
         }
     }
 }
@@ -35,37 +113,37 @@ struct MoreView: View {
         NavigationStack {
             List {
                 Section("Server") {
-                    NavigationLink {
-                        ProcessesView()
-                    } label: {
+                    NavigationLink(value: MainSection.processes) {
                         MoreRow(title: "Processes", systemImage: "square.stack.3d.up", color: .blue)
                     }
-                    NavigationLink {
-                        UsersView()
-                    } label: {
+                    NavigationLink(value: MainSection.users) {
                         MoreRow(title: "Users", systemImage: "person.2.fill", color: .indigo)
                     }
-                    NavigationLink {
-                        UpdatesView()
-                    } label: {
+                    NavigationLink(value: MainSection.updates) {
                         MoreRow(title: "Updates", systemImage: "arrow.down.circle.fill", color: .orange)
                     }
-                    NavigationLink {
-                        LogsView()
-                    } label: {
+                    NavigationLink(value: MainSection.logs) {
                         MoreRow(title: "Logs", systemImage: "doc.text.fill", color: .teal)
                     }
                 }
                 Section("Panel") {
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
+                    NavigationLink(value: MainSection.settings) {
                         MoreRow(title: "Settings", systemImage: "gearshape.fill", color: .gray)
                     }
                 }
             }
             .navigationTitle("More")
             .listStyle(.insetGrouped)
+            .navigationDestination(for: MainSection.self) { section in
+                switch section {
+                case .processes: ProcessesView()
+                case .users: UsersView()
+                case .updates: UpdatesView()
+                case .logs: LogsView()
+                case .settings: SettingsView()
+                default: EmptyView()
+                }
+            }
         }
     }
 }

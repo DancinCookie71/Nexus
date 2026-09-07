@@ -2,9 +2,9 @@ import Foundation
 
 @MainActor
 final class TerminalViewModel: ObservableObject {
-    @Published var output = ""
     @Published var isConnected = false
-    @Published var error: NexusError?
+    var onOutput: ((String) -> Void)?
+    var onDisconnect: ((Error?) -> Void)?
 
     private var webSocket: NexusWebSocket?
 
@@ -36,41 +36,12 @@ final class TerminalViewModel: ObservableObject {
             webSocket?.send(string)
         }
     }
-
-    func append(_ text: String) {
-        let cleaned = TerminalViewModel.stripAnsi(text)
-        output.append(cleaned)
-        if output.count > 50000 {
-            let start = output.index(output.endIndex, offsetBy: -40000)
-            output = String(output[start...])
-        }
-    }
-
-    private static func stripAnsi(_ text: String) -> String {
-        var result = text
-        // ESC[ ... m (SGR colors/attributes)
-        result = result.replacingOccurrences(of: "\u{1B}\\[[0-9;]*m", with: "", options: .regularExpression)
-        // ESC[ ... H, ESC[ ... J, ESC[ ... K (cursor movement, clear)
-        result = result.replacingOccurrences(of: "\u{1B}\\[[0-9;]*[A-HJKSTfn]", with: "", options: .regularExpression)
-        // ESC[? ... h/l (mode set/reset like bracketed paste)
-        result = result.replacingOccurrences(of: "\u{1B}\\[\\?[0-9;]*[hl]", with: "", options: .regularExpression)
-        // ESC]0;...BEL (window title)
-        result = result.replacingOccurrences(of: "\u{1B}]0;[^\u{0007}]*\u{0007}", with: "", options: .regularExpression)
-        // ESC]...BEL (other OSC sequences)
-        result = result.replacingOccurrences(of: "\u{1B}][^\u{0007}]*\u{0007}", with: "", options: .regularExpression)
-        // ESC(B, ESC)0, ESC M (charset/scroll)
-        result = result.replacingOccurrences(of: "\u{1B}[()][AB012]", with: "", options: .regularExpression)
-        result = result.replacingOccurrences(of: "\u{1B}M", with: "", options: .regularExpression)
-        // Generic: any remaining ESC + 1-2 chars
-        result = result.replacingOccurrences(of: "\u{1B}.?", with: "", options: .regularExpression)
-        return result
-    }
 }
 
 extension TerminalViewModel: NexusWebSocketDelegate {
     nonisolated func webSocketDidReceiveMessage(_ message: String) {
         Task { @MainActor in
-            append(message)
+            self.onOutput?(message)
         }
     }
 
@@ -83,9 +54,7 @@ extension TerminalViewModel: NexusWebSocketDelegate {
     nonisolated func webSocketDidDisconnect(error: Error?) {
         Task { @MainActor in
             isConnected = false
-            if let error = error {
-                self.error = .networkError(error)
-            }
+            self.onDisconnect?(error)
         }
     }
 }

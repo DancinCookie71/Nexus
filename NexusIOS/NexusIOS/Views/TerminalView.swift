@@ -1,13 +1,10 @@
 import SwiftUI
+import SwiftTerm
 import UIKit
 
 struct TerminalView: View {
     @StateObject private var viewModel = TerminalViewModel()
-    @State private var input = ""
-    @State private var isAtBottom = true
-    @State private var scrollToBottomRequest = false
-    @State private var copiedFeedback = false
-    @FocusState private var inputFocused: Bool
+    @State private var reconnectTick = 0
 
     var body: some View {
         NavigationStack {
@@ -20,7 +17,7 @@ struct TerminalView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Spacer()
-                    Button(action: { viewModel.connect() }) {
+                    Button(action: reconnect) {
                         Image(systemName: "arrow.clockwise")
                     }
                     .disabled(viewModel.isConnected)
@@ -29,91 +26,12 @@ struct TerminalView: View {
                 .padding(.vertical, 8)
                 .background(Color(.systemGroupedBackground))
 
-                ZStack(alignment: .bottomTrailing) {
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            Text(viewModel.output)
-                                .font(.system(.caption, design: .monospaced))
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-
-                            Color.clear
-                                .frame(height: 1)
-                                .id("bottom")
-                                .onAppear { isAtBottom = true }
-                                .onDisappear { isAtBottom = false }
-                        }
-                        .background(Color.black)
-                        .foregroundColor(.green)
-                        .onChange(of: viewModel.output) { _ in
-                            if isAtBottom {
-                                proxy.scrollTo("bottom", anchor: .bottom)
-                            }
-                        }
-                        .onChange(of: scrollToBottomRequest) { _ in
-                            if scrollToBottomRequest {
-                                withAnimation {
-                                    proxy.scrollTo("bottom", anchor: .bottom)
-                                }
-                                isAtBottom = true
-                                scrollToBottomRequest = false
-                            }
-                        }
-                        .background(
-                            GeometryReader { geo in
-                                Color.clear
-                                    .onAppear { updateTerminalSize(geo.size) }
-                                    .onChange(of: geo.size) { _ in updateTerminalSize(geo.size) }
-                            }
-                        )
-                    }
-
-                    if !isAtBottom {
-                        Button {
-                            scrollToBottomRequest = true
-                        } label: {
-                            Image(systemName: "chevron.down")
-                                .font(.caption.weight(.bold))
-                                .padding(10)
-                                .background(.ultraThinMaterial)
-                                .foregroundColor(.green)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                        }
-                        .padding(12)
-                    }
-                }
-
-                HStack {
-                    TextField("Command", text: $input)
-                        .textFieldStyle(.roundedBorder)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .focused($inputFocused)
-                        .keyboardType(.asciiCapable)
-                        .submitLabel(.send)
-                        .onSubmit(send)
-                    Button(action: send) {
-                        Image(systemName: "return")
-                    }
-                    .disabled(input.isEmpty || !viewModel.isConnected)
-                }
-                .padding()
-                .background(Color(.systemGroupedBackground))
+                TerminalHostView(viewModel: viewModel)
+                    .accessibilityIdentifier("terminal-host")
             }
             .navigationTitle("Terminal")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: copyAll) {
-                        Image(systemName: copiedFeedback ? "checkmark" : "doc.on.doc")
-                    }
-                    .disabled(viewModel.output.isEmpty)
-                }
-            }
             .onAppear {
                 viewModel.connect()
-                inputFocused = true
             }
             .onDisappear {
                 viewModel.disconnect()
@@ -121,28 +39,57 @@ struct TerminalView: View {
         }
     }
 
-    private func send() {
-        guard !input.isEmpty else { return }
-        viewModel.sendInput(input + "\n")
-        input = ""
-        if !isAtBottom {
-            scrollToBottomRequest = true
+    private func reconnect() {
+        Haptics.light()
+        viewModel.disconnect()
+        viewModel.connect()
+    }
+}
+
+struct TerminalHostView: UIViewRepresentable {
+    @ObservedObject var viewModel: TerminalViewModel
+
+    func makeUIView(context: Context) -> SwiftTerm.TerminalView {
+        let terminal = SwiftTerm.TerminalView(frame: .zero)
+        terminal.terminalDelegate = context.coordinator
+        terminal.font = UIFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        terminal.backgroundColor = UIColor.black
+        terminal.nativeBackgroundColor = UIColor.black
+        terminal.nativeForegroundColor = UIColor(red: 0.3, green: 0.85, blue: 0.4, alpha: 1)
+        viewModel.onOutput = { [weak terminal] text in
+            terminal?.feed(byteSource: Array(text.utf8)[...])
         }
+        return terminal
     }
 
-    private func copyAll() {
-        UIPasteboard.general.string = viewModel.output
-        withAnimation { copiedFeedback = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation { copiedFeedback = false }
-        }
+    func updateUIView(_ uiView: SwiftTerm.TerminalView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(viewModel: viewModel)
     }
 
-    private func updateTerminalSize(_ size: CGSize) {
-        let charWidth: CGFloat = 8.0
-        let lineHeight: CGFloat = 14.0
-        let cols = max(1, Int(size.width / charWidth))
-        let rows = max(1, Int(size.height / lineHeight))
-        viewModel.sendResize(rows: rows, cols: cols)
+    final class Coordinator: NSObject, TerminalViewDelegate {
+        private let viewModel: TerminalViewModel
+
+        init(viewModel: TerminalViewModel) {
+            self.viewModel = viewModel
+        }
+
+        func send(source: SwiftTerm.TerminalView, data: ArraySlice<UInt8>) {
+            let bytes = Array(data)
+            if let text = String(bytes: bytes, encoding: .utf8) {
+                viewModel.sendInput(text)
+            }
+        }
+
+        func terminalView(_ view: SwiftTerm.TerminalView, didChangeTerminalSize size: CGSize, source: SwiftTerm.TerminalView) {
+            viewModel.sendResize(rows: Int(size.height), cols: Int(size.width))
+        }
+
+        func terminalView(_ view: SwiftTerm.TerminalView, setTerminalIconTitle source: SwiftTerm.TerminalView, title: String) {}
+
+        func terminalView(_ view: SwiftTerm.TerminalView, rangeChanged range: Range<String.Index>, source: SwiftTerm.TerminalView) {}
+
+        func scrolled(source: SwiftTerm.TerminalView, position: Double) {}
     }
 }

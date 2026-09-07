@@ -8,9 +8,11 @@ protocol NexusWebSocketDelegate: AnyObject {
 
 final class NexusWebSocket: NSObject, URLSessionWebSocketDelegate {
     private var task: URLSessionWebSocketTask?
-    private let url: URL
     private var session: URLSession?
+    private let url: URL
     private var isConnected = false
+    private var shouldStayConnected = false
+    private var reconnectAttempts = 0
 
     weak var delegate: NexusWebSocketDelegate?
 
@@ -28,7 +30,23 @@ final class NexusWebSocket: NSObject, URLSessionWebSocketDelegate {
     }
 
     func connect() {
-        disconnect()
+        shouldStayConnected = true
+        reconnectAttempts = 0
+        openConnection()
+    }
+
+    func disconnect() {
+        shouldStayConnected = false
+        task?.cancel(with: .normalClosure, reason: nil)
+        task = nil
+        session?.invalidateAndCancel()
+        session = nil
+        isConnected = false
+    }
+
+    private func openConnection() {
+        task?.cancel(with: .goingAway, reason: nil)
+        session?.invalidateAndCancel()
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
         let session = URLSession(configuration: config, delegate: self, delegateQueue: .main)
@@ -39,11 +57,14 @@ final class NexusWebSocket: NSObject, URLSessionWebSocketDelegate {
         listen()
     }
 
-    func disconnect() {
-        task?.cancel(with: .normalClosure, reason: nil)
-        task = nil
-        session = nil
-        isConnected = false
+    private func scheduleReconnect() {
+        guard shouldStayConnected else { return }
+        reconnectAttempts += 1
+        let delay = TimeInterval(min(30, pow(2, Double(min(reconnectAttempts, 5)))))
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self, self.shouldStayConnected, !self.isConnected else { return }
+            self.openConnection()
+        }
     }
 
     func send(_ text: String) {
@@ -60,26 +81,39 @@ final class NexusWebSocket: NSObject, URLSessionWebSocketDelegate {
                     self.delegate?.webSocketDidReceiveMessage(text)
                 case .data:
                     break
+                case .binary(let data):
+                    if let text = String(data: data, encoding: .utf8) {
+                        self.delegate?.webSocketDidReceiveMessage(text)
+                    }
                 @unknown default:
                     break
                 }
                 self.listen()
             case .failure(let error):
+                let wasConnected = self.isConnected
                 self.isConnected = false
-                self.delegate?.webSocketDidDisconnect(error: error)
+                if wasConnected {
+                    self.delegate?.webSocketDidDisconnect(error: error)
+                }
+                self.scheduleReconnect()
             }
         }
     }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         isConnected = true
+        reconnectAttempts = 0
         delegate?.webSocketDidConnect()
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        let wasConnected = isConnected
         isConnected = false
-        if let error = error {
+        if wasConnected {
             delegate?.webSocketDidDisconnect(error: error)
+        }
+        if error != nil {
+            scheduleReconnect()
         }
     }
 }

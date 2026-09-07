@@ -26,6 +26,9 @@ struct LoginView: View {
                     brand
 
                     VStack(spacing: 16) {
+                        if let notice = appState.sessionNotice {
+                            infoPill(notice)
+                        }
                         fieldStack
                         if let errorMessage {
                             errorPill(errorMessage)
@@ -160,6 +163,18 @@ struct LoginView: View {
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.red.opacity(0.1)))
     }
 
+    private func infoPill(_ message: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "clock.arrow.circlepath")
+            Text(message)
+                .font(.footnote)
+        }
+        .foregroundColor(.indigo)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.indigo.opacity(0.1)))
+    }
+
     private var signInButton: some View {
         Button(action: signIn) {
             HStack {
@@ -187,6 +202,7 @@ struct LoginView: View {
         focusedField = nil
         isLoading = true
         errorMessage = nil
+        appState.sessionNotice = nil
         Task {
             do {
                 try await appState.login(

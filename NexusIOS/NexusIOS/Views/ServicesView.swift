@@ -5,6 +5,7 @@ struct ServicesView: View {
     @StateObject private var viewModel = ServicesViewModel()
     @EnvironmentObject var appState: AppState
     @State private var selectedService: ServiceSummary?
+    @State private var pendingAction: (service: ServiceSummary, action: String)?
 
     private var isAdmin: Bool { appState.adminStatus?.isAdmin == true }
 
@@ -43,17 +44,22 @@ struct ServicesView: View {
                         .swipeActions(edge: .trailing) {
                             if isAdmin {
                                 if service.activeState == "active" {
-                                    Button("Restart") {
-                                        Task { await viewModel.performAction(service, action: "restart") }
+                                    Button {
+                                        pendingAction = (service, "restart")
+                                    } label: {
+                                        Label("Restart", systemImage: "arrow.clockwise")
                                     }
                                     .tint(.blue)
-                                    Button("Stop", role: .destructive) {
-                                        Haptics.heavy()
-                                        Task { await viewModel.performAction(service, action: "stop") }
+                                    Button(role: .destructive) {
+                                        pendingAction = (service, "stop")
+                                    } label: {
+                                        Label("Stop", systemImage: "stop.fill")
                                     }
                                 } else {
-                                    Button("Start") {
-                                        Task { await viewModel.performAction(service, action: "start") }
+                                    Button {
+                                        pendingAction = (service, "start")
+                                    } label: {
+                                        Label("Start", systemImage: "play.fill")
                                     }
                                     .tint(.green)
                                 }
@@ -70,6 +76,27 @@ struct ServicesView: View {
             .task { await viewModel.load() }
             .sheet(item: $selectedService) { service in
                 ServiceDetailSheet(service: service, viewModel: viewModel)
+            }
+            .confirmationDialog(
+                pendingAction.map { "\($0.action.capitalized) \($0.service.name)?" } ?? "",
+                isPresented: Binding(
+                    get: { pendingAction != nil },
+                    set: { if !$0 { pendingAction = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                let action = pendingAction?.action ?? ""
+                Button(action.capitalized, role: action == "stop" ? .destructive : nil) {
+                    guard let target = pendingAction else { return }
+                    pendingAction = nil
+                    Haptics.medium()
+                    Task {
+                        _ = await viewModel.performAction(target.service, action: target.action)
+                    }
+                }
+                Button("Cancel", role: .cancel) { pendingAction = nil }
+            } message: {
+                Text("This changes the service state on the server.")
             }
         }
     }

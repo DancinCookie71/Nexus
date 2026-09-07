@@ -26,8 +26,11 @@ All are served with subresource-integrity hashes pinned to the exact versions ab
 
 ## iOS app (`NexusIOS/`)
 
-- No third-party Swift package dependencies.
-- All bundled assets (including the `os-logo` server icon) are original to this project.
+| Package | License | Used by |
+|---------|---------|---------|
+| SwiftTerm | MIT | Terminal emulator in `NexusIOS/NexusIOS/Views/TerminalView.swift` (resolved via Swift Package Manager) |
+
+- All bundled assets (including the `os-logo` server icon and app icon) are original to this project.
 
 ## Example assets
 

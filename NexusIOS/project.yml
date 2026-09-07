@@ -5,12 +5,18 @@ options:
     iOS: "16.0"
   developmentLanguage: en
   defaultConfig: Release
+packages:
+  SwiftTerm:
+    url: https://github.com/migueldeicaza/SwiftTerm.git
+    from: 1.2.0
 targets:
   NexusIOS:
     type: application
     platform: iOS
     sources:
       - path: NexusIOS
+    dependencies:
+      - package: SwiftTerm
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nexus.NexusIOS

@@ -57,6 +57,19 @@ jobs:
           zip -qry NexusIOS-unsigned.ipa Payload
           cd ..
 
+      - name: Compile UI tests for simulator
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project NexusIOS/NexusIOS.xcodeproj \
+            -scheme NexusIOS \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            build-for-testing \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build/xcodebuild-uitests.log
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
