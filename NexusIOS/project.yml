@@ -8,7 +8,7 @@ options:
 packages:
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm.git
-    from: 1.2.0
+    exactVersion: 1.2.5
 targets:
   NexusIOS:
     type: application
