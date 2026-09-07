@@ -3,19 +3,6 @@ import XCTest
 final class RegressionUITests: XCTestCase {
 
     @MainActor
-    private func signInIfNeeded(_ app: XCUIApplication) {
-        let usernameField = app.textFields["Username"]
-        if usernameField.waitForExistence(timeout: 5) {
-            usernameField.tap()
-            usernameField.typeText("cookie")
-            let passwordField = app.secureTextFields["Password"]
-            passwordField.tap()
-            passwordField.typeText("qogduf-0piFqi-doxziz")
-            app.buttons["Sign In"].tap()
-        }
-    }
-
-    @MainActor
     private func openMoreTabItem(_ app: XCUIApplication, name: String) {
         let moreButton = app.tabBars.buttons["More"]
         XCTAssertTrue(moreButton.waitForExistence(timeout: 10), "More tab missing")
@@ -29,7 +16,7 @@ final class RegressionUITests: XCTestCase {
     func testWorkingTabsStillRender() throws {
         let app = XCUIApplication()
         app.launch()
-        signInIfNeeded(app)
+        try signInIfNeeded(app)
 
         app.tabBars.buttons["Services"].tap()
         XCTAssertTrue(app.staticTexts["Services"].waitForExistence(timeout: 15), "Services tab failed to render")

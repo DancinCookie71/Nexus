@@ -3,19 +3,6 @@ import XCTest
 final class TerminalUITests: XCTestCase {
 
     @MainActor
-    private func signInIfNeeded(_ app: XCUIApplication) {
-        let usernameField = app.textFields["Username"]
-        if usernameField.waitForExistence(timeout: 5) {
-            usernameField.tap()
-            usernameField.typeText("cookie")
-            let passwordField = app.secureTextFields["Password"]
-            passwordField.tap()
-            passwordField.typeText("qogduf-0piFqi-doxziz")
-            app.buttons["Sign In"].tap()
-        }
-    }
-
-    @MainActor
     private func openTerminal(_ app: XCUIApplication) {
         app.tabBars.buttons["Terminal"].tap()
         let connected = app.staticTexts["Connected"]
@@ -26,7 +13,7 @@ final class TerminalUITests: XCTestCase {
     func testTerminalConnectsAndEchoes() throws {
         let app = XCUIApplication()
         app.launch()
-        signInIfNeeded(app)
+        try signInIfNeeded(app)
         openTerminal(app)
 
         let commandField = app.textFields["Command"]
@@ -42,7 +29,7 @@ final class TerminalUITests: XCTestCase {
     func testTerminalSelectionMenuAppears() throws {
         let app = XCUIApplication()
         app.launch()
-        signInIfNeeded(app)
+        try signInIfNeeded(app)
         openTerminal(app)
 
         let commandField = app.textFields["Command"]
