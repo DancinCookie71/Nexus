@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+credentials*.json
+secrets*.json
+
+# Databases
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# Node (not currently used, kept for safety)
+node_modules/
+
+# AI tooling / local agent state — never commit
+.opencode/
+.claude/
+.copilot/
+.aider*
+AGENTS.local.md
+
+# iOS / Xcode
+NexusIOS/build/
+NexusIOS/unsigned.xcarchive/
+NexusIOS/DerivedData/
+NexusIOS/**/xcuserdata/
+*.xcuserstate
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.xcarchive
+NexusIOS/NexusIOS-unsigned.ipa

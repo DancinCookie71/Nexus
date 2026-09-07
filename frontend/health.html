@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha384-JUh163oCRItcbPme8pYnROHQMC6fNKTBWtRG3I3I0erJkzNgL7uxKlNwcrcFKeqF" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Health</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>System Health</h1>
+                    <p class="detail">Live real-time overview of the entire machine.</p>
+                </div>
+
+                <div class="health-overall" id="health-overall">
+                    <div class="status-ring healthy"></div>
+                    <div class="status-text">
+                        <h2 id="overall-status">HEALTHY</h2>
+                        <p id="overall-summary">All systems operating normally</p>
+                    </div>
+                </div>
+
+                <div class="health-grid" id="health-grid">
+                    <div class="health-card" data-component="cpu">
+                        <div class="health-card-header">
+                            <h3>CPU</h3>
+                            <span class="status-badge" id="cpu-status">Healthy</span>
+                        </div>
+                        <div class="health-metric">
+                            <span class="metric-value" id="cpu-percent">--</span>
+                            <span class="metric-label">usage</span>
+                        </div>
+                        <div class="health-details" id="cpu-details"></div>
+                        <div class="chart-container">
+                            <canvas id="cpu-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="health-card" data-component="memory">
+                        <div class="health-card-header">
+                            <h3>Memory</h3>
+                            <span class="status-badge" id="memory-status">Healthy</span>
+                        </div>
+                        <div class="health-metric">
+                            <span class="metric-value" id="memory-percent">--</span>
+                            <span class="metric-label">used</span>
+                        </div>
+                        <div class="health-details" id="memory-details"></div>
+                        <div class="chart-container">
+                            <canvas id="memory-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="health-card wide" data-component="disks">
+                        <div class="health-card-header">
+                            <h3>Disks</h3>
+                            <span class="status-badge" id="disks-status">Healthy</span>
+                        </div>
+                        <div class="health-details" id="disks-details"></div>
+                    </div>
+
+                    <div class="health-card" data-component="network">
+                        <div class="health-card-header">
+                            <h3>Network</h3>
+                            <span class="status-badge" id="network-status">Healthy</span>
+                        </div>
+                        <div class="health-metric">
+                            <span class="metric-value" id="network-total">--</span>
+                            <span class="metric-label">total throughput</span>
+                        </div>
+                        <div class="health-details" id="network-details"></div>
+                        <div class="chart-container">
+                            <canvas id="network-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="health-card" data-component="system">
+                        <div class="health-card-header">
+                            <h3>System</h3>
+                            <span class="status-badge" id="system-status">Healthy</span>
+                        </div>
+                        <div class="health-details" id="system-details"></div>
+                    </div>
+
+                    <div class="health-card" data-component="gpu" id="gpu-card" style="display:none;">
+                        <div class="health-card-header">
+                            <h3>GPU</h3>
+                            <span class="status-badge" id="gpu-status">Healthy</span>
+                        </div>
+                        <div class="health-details" id="gpu-details"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top:1.5rem;">
+                    <h2>Hardware Sensors</h2>
+                    <div class="health-details" id="sensors-details">
+                        <p class="detail">No sensor data available.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/health.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# Nexus Panel privilege escalation for the dedicated service user.
+#
+# The panel service user may run only these exact commands without a password.
+# Adjust the install root (/opt/nexus-panel) and the service user name
+# (nexus) to match your deployment, then install with:
+#
+#     sudo visudo -cf 99-nexus-panel-nexus \
+#         && sudo install -m 440 -o root -g root \
+#             99-nexus-panel-nexus /etc/sudoers.d/99-nexus-panel-nexus
+#
+# Notes:
+# - SETENV is required so the terminal can preserve TERM and the file worker
+#   can receive NEXUS_FILES_ROOT for the target user's home directory.
+# - Argument patterns in sudoers are exact: a trailing " *" does NOT match a
+#   bare command, and extra unused arguments break the match. Call exactly
+#   what the aliases list.
+# - Least privilege: the terminal only ever runs "sudo -u <user> bash -l",
+#   so no argument-carrying bash alias is granted. Note that any entry
+#   matching a shell still permits an interactive shell when run without
+#   "-u"; remove NEXUS_TERMINAL_SUDO if you disable the web terminal.
+
+Cmnd_Alias NEXUS_SYSTEMCTL = /usr/bin/systemctl start *, /usr/bin/systemctl stop *, \
+    /usr/bin/systemctl restart *, /usr/bin/systemctl reload *, /usr/bin/systemctl enable *, \
+    /usr/bin/systemctl disable *, /usr/bin/systemctl status *, /usr/bin/systemctl is-enabled *, \
+    /usr/bin/systemctl show *, /usr/bin/systemctl list-units *, /bin/systemctl start *, \
+    /bin/systemctl stop *, /bin/systemctl restart *, /bin/systemctl reload *, \
+    /bin/systemctl enable *, /bin/systemctl disable *, /bin/systemctl status *, \
+    /bin/systemctl is-enabled *, /bin/systemctl show *, /bin/systemctl list-units *, \
+    /usr/bin/systemctl reboot, /bin/systemctl reboot
+Cmnd_Alias NEXUS_SMART = /usr/sbin/smartctl -H *, /usr/sbin/smartctl -A *, \
+    /usr/sbin/smartctl -a *, /usr/sbin/smartctl -i *
+Cmnd_Alias NEXUS_UPDATES = /usr/bin/apt-get update, /usr/bin/apt-get -y upgrade, \
+    /usr/bin/apt -y upgrade, \
+    DEBIAN_FRONTEND=noninteractive /usr/bin/apt-get -y upgrade, \
+    /usr/bin/dnf upgrade -y
+Cmnd_Alias NEXUS_TERMINAL_SUDO = /bin/bash -l, /usr/bin/bash -l
+Cmnd_Alias NEXUS_FILES = /opt/nexus-panel/backend/.venv/bin/python \
+    /opt/nexus-panel/backend/app/services/files_worker.py
+Cmnd_Alias NEXUS_USERS = /usr/sbin/useradd -m -c * -s * *, /usr/bin/chpasswd, \
+    /usr/sbin/userdel *, /usr/sbin/usermod -aG sudo *, /usr/sbin/usermod -rG sudo *
+
+nexus ALL=(ALL) NOPASSWD: SETENV: NEXUS_SYSTEMCTL, NEXUS_SMART, NEXUS_UPDATES, \
+    NEXUS_TERMINAL_SUDO, NEXUS_FILES, NEXUS_USERS

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Settings</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>System Settings</h1>
+                    <p>Configure Nexus, server behavior, security, and notifications.</p>
+                </div>
+
+                <div id="settings-notice" class="notice" style="display:none;"></div>
+
+                <div class="settings-grid" id="settings-container">
+                    <p class="text-muted">Loading settings...</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/settings.js"></script>
+</body>
+</html>

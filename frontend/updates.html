@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updates | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Updates</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>System Updates</h1>
+                    <p>Available package updates. Installation is not performed automatically.</p>
+                </div>
+
+                <div class="notice notice-warning" id="reboot-banner" style="display:none;">
+                    <strong>System restart required.</strong> Updates have been installed that need a reboot to take effect.
+                </div>
+
+                <div class="card">
+                    <div class="update-header">
+                        <div>
+                            <div class="update-count" id="update-count">--</div>
+                            <div class="detail" id="update-manager"></div>
+                        </div>
+                        <div class="update-actions">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="reboot-after"> Reboot after
+                            </label>
+                            <button class="btn btn-ghost" id="refresh-updates">Refresh</button>
+                            <button class="btn btn-primary" id="install-updates">Install Updates</button>
+                        </div>
+                    </div>
+                    <div id="updates-error" class="error-message"></div>
+                    <div id="updates-status" class="detail" style="display:none;"></div>
+                    <ul class="package-list" id="package-list"></ul>
+                    <div id="updates-unsupported" class="detail" style="display:none;"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/updates.js"></script>
+</body>
+</html>

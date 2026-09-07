@@ -1,0 +1,26 @@
+[Unit]
+Description=Nexus Panel API (runs as your own user; simpler, less isolated)
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+Group=youruser
+WorkingDirectory=/opt/nexus-panel/backend
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/opt/nexus-panel/backend/.env
+ExecStart=/opt/nexus-panel/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/nexus-panel/backend/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

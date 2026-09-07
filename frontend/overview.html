@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overview | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Overview</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>System Overview</h1>
+                    <p id="hostname">Loading... <span id="last-updated" class="last-updated"></span></p>
+                </div>
+
+                <div class="grid">
+                    <article class="card">
+                        <h2>CPU</h2>
+                        <div class="metric" id="cpu-metric">--%</div>
+                        <div class="detail" id="cpu-detail">-- cores</div>
+                        <div class="progress"><div class="progress-bar" id="cpu-bar"></div></div>
+                        <canvas class="sparkline" id="cpu-spark" height="40"></canvas>
+                    </article>
+
+                    <article class="card">
+                        <h2>Memory</h2>
+                        <div class="metric" id="memory-metric">--%</div>
+                        <div class="detail" id="memory-detail">-- / --</div>
+                        <div class="progress"><div class="progress-bar" id="memory-bar"></div></div>
+                        <canvas class="sparkline" id="memory-spark" height="40"></canvas>
+                    </article>
+
+                    <article class="card">
+                        <h2>Disk</h2>
+                        <div class="metric" id="disk-metric">--%</div>
+                        <div class="detail" id="disk-detail">-- / --</div>
+                        <div class="progress"><div class="progress-bar" id="disk-bar"></div></div>
+                        <canvas class="sparkline" id="disk-spark" height="40"></canvas>
+                    </article>
+
+                    <article class="card">
+                        <h2>Temperature</h2>
+                        <div class="metric" id="temperature-metric">--°C</div>
+                        <div class="detail">System temperature</div>
+                        <canvas class="sparkline" id="temperature-spark" height="40"></canvas>
+                    </article>
+                </div>
+
+                <div class="grid single">
+                    <article class="card info-card">
+                        <h2>System Information</h2>
+                        <dl class="info-list" id="system-info">
+                            <div><dt>Hostname</dt><dd id="info-hostname">--</dd></div>
+                            <div><dt>OS</dt><dd id="info-os">--</dd></div>
+                            <div><dt>Kernel</dt><dd id="info-kernel">--</dd></div>
+                            <div><dt>Architecture</dt><dd id="info-arch">--</dd></div>
+                            <div><dt>Uptime</dt><dd id="info-uptime">--</dd></div>
+                        </dl>
+                    </article>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/overview.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Storage</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>Drives</h1>
+                    <p class="detail">Physical drives and SMART health.</p>
+                </div>
+
+                <div class="card">
+                    <div class="toolbar">
+                        <h2 style="margin:0;">Physical Drives</h2>
+                        <button class="btn btn-ghost btn-sm" id="refresh-drives">Refresh</button>
+                    </div>
+                    <div id="drives-loading">Loading drives...</div>
+                    <div id="drives-empty" class="empty-state" style="display:none;">No drives found.</div>
+                    <div id="drives-table-container" style="display:none;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Device</th>
+                                    <th>Model</th>
+                                    <th>Serial</th>
+                                    <th>Size</th>
+                                    <th>Temp</th>
+                                    <th>Power On</th>
+                                    <th>SMART</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="drives-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/storage.js"></script>
+</body>
+</html>

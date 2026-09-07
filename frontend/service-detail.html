@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Detail | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Service Detail</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <div class="service-title">
+                        <h1 id="detail-name">Loading...</h1>
+                        <span id="detail-status-badge"></span>
+                    </div>
+                    <p class="service-subtitle" id="detail-description"></p>
+                </div>
+
+                <div class="tabs" id="detail-tabs">
+                    <button class="tab active" data-tab="overview">Overview</button>
+                    <button class="tab" data-tab="configuration">Configuration</button>
+                    <button class="tab" data-tab="logs">Logs</button>
+                </div>
+
+                <div id="tab-overview" class="tab-panel active">
+                    <div class="card">
+                        <h2>Overview</h2>
+                        <div class="detail-grid" id="overview-grid"></div>
+                    </div>
+                    <div class="card" style="margin-top:1rem;">
+                        <h2>Actions</h2>
+                        <div class="service-actions" id="detail-actions"></div>
+                        <div id="action-result" class="detail" style="margin-top:0.75rem;"></div>
+                    </div>
+                </div>
+
+                <div id="tab-configuration" class="tab-panel">
+                    <div class="card">
+                        <h2>Configuration</h2>
+                        <div class="detail-grid" id="configuration-grid"></div>
+                    </div>
+                    <div class="card" style="margin-top:1rem;">
+                        <h2>Dependencies</h2>
+                        <div id="dependencies-grid"></div>
+                    </div>
+                </div>
+
+                <div id="tab-logs" class="tab-panel">
+                    <div class="card">
+                        <div class="toolbar">
+                            <h2 style="margin:0;">Journal Logs</h2>
+                            <button class="btn btn-ghost btn-sm" id="refresh-logs">Refresh</button>
+                        </div>
+                        <div id="logs-empty" class="empty-state" style="display:none;">No logs available.</div>
+                        <div class="log-viewer" id="log-viewer"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/service-detail.js"></script>
+</body>
+</html>

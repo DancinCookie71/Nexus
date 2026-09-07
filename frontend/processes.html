@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processes | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Processes</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>Running Processes</h1>
+                    <p id="proc-updated">Loading...</p>
+                </div>
+
+                <div class="grid">
+                    <article class="card">
+                        <h2>Processes</h2>
+                        <div class="metric" id="proc-total">--</div>
+                        <div class="detail" id="proc-states">-- running / -- sleeping</div>
+                    </article>
+                    <article class="card">
+                        <h2>CPU</h2>
+                        <div class="metric" id="proc-cpu">--%</div>
+                        <div class="detail">System-wide utilization</div>
+                        <canvas class="sparkline" id="cpu-sparkline" height="40"></canvas>
+                    </article>
+                    <article class="card">
+                        <h2>Memory</h2>
+                        <div class="metric" id="proc-mem">--%</div>
+                        <div class="detail">System-wide utilization</div>
+                        <canvas class="sparkline" id="mem-sparkline" height="40"></canvas>
+                    </article>
+                    <article class="card">
+                        <h2>Load Average</h2>
+                        <div class="metric metric-sm" id="proc-load">--</div>
+                        <div class="detail">1 / 5 / 15 min</div>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <div class="table-toolbar">
+                        <input type="text" id="proc-search" class="table-search" placeholder="Filter by name, user, or command...">
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table proc-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="name" class="sortable">Name</th>
+                                    <th data-sort="pid" class="sortable">PID</th>
+                                    <th data-sort="username" class="sortable">User</th>
+                                    <th data-sort="cpu_percent" class="sortable sorted-desc">CPU %</th>
+                                    <th data-sort="memory_percent" class="sortable">Memory</th>
+                                    <th data-sort="status" class="sortable">State</th>
+                                    <th class="col-command">Command</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="proc-table-body"></tbody>
+                        </table>
+                    </div>
+                    <p class="empty-state" id="proc-empty" style="display:none;">No matching processes.</p>
+                    <p class="text-muted" style="margin-top:0.75rem;">Stopping is limited to processes owned by the panel service user. Admin mode is required.</p>
+                </article>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/processes.js"></script>
+</body>
+</html>

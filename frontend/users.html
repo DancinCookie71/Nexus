@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Users</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>User Accounts</h1>
+                    <p>Local UNIX accounts on this system. Admins can elevate inside the panel.</p>
+                </div>
+
+                <div id="users-notice" class="notice" style="display:none;"></div>
+
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="btn-add-user">+ Add User</button>
+                </div>
+
+                <div id="users-loading" class="text-muted">Loading users...</div>
+                <div class="users-list" id="users-list"></div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal" id="create-user-modal" style="display:none;">
+        <div class="modal-content" style="max-width:460px;">
+            <div class="modal-header">
+                <h2>Add User</h2>
+                <button class="close-modal" id="create-user-close">&times;</button>
+            </div>
+            <form id="create-user-form" class="form-stack">
+                <label>
+                    Username
+                    <input type="text" id="new-username" autocomplete="off" required pattern="[a-z_][a-z0-9_-]*">
+                </label>
+                <label>
+                    Full name
+                    <input type="text" id="new-fullname" autocomplete="off">
+                </label>
+                <label>
+                    Password
+                    <input type="password" id="new-password" autocomplete="new-password" required minlength="8">
+                </label>
+                <label>
+                    Shell
+                    <input type="text" id="new-shell" value="/bin/bash" autocomplete="off">
+                </label>
+                <div id="create-user-error" class="form-error" style="display:none;"></div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="password-modal" style="display:none;">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header">
+                <h2 id="password-modal-title">Set Password</h2>
+                <button class="close-modal" id="password-close">&times;</button>
+            </div>
+            <form id="password-form" class="form-stack">
+                <label>
+                    New password
+                    <input type="password" id="password-input" autocomplete="new-password" required minlength="8">
+                </label>
+                <div id="password-error" class="form-error" style="display:none;"></div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Set Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="confirm-modal" style="display:none;">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header">
+                <h2 id="confirm-title">Confirm</h2>
+                <button class="close-modal" id="confirm-close">&times;</button>
+            </div>
+            <p id="confirm-message"></p>
+            <div class="form-actions">
+                <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+                <button class="btn btn-danger" id="confirm-ok">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/users.js"></script>
+</body>
+</html>

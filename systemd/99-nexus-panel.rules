@@ -1,0 +1,17 @@
+// Optional polkit rule: allow the Nexus Panel service user to manage systemd
+// units and unit files when systemd operations run without sudo.
+// Most Nexus Panel deployments use the sudoers file instead and do not need
+// this rule. Replace "nexus" with your panel service user if different.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.systemd1.manage-units" &&
+        subject.user == "nexus") {
+        return polkit.Result.YES;
+    }
+});
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.systemd1.manage-unit-files" &&
+        subject.user == "nexus") {
+        return polkit.Result.YES;
+    }
+});

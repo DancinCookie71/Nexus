@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Files | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Files</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>File Manager</h1>
+                    <p class="detail">Browse, edit, upload, and manage files on the server.</p>
+                </div>
+
+                <div class="card file-manager-card">
+                    <div class="file-context-bar" id="file-context-bar">
+                        Browsing as <strong>nexus</strong>
+                    </div>
+                    <div class="file-toolbar">
+                        <div class="toolbar-group">
+                            <div class="dropdown" id="new-dropdown">
+                                <button class="btn btn-sm btn-primary" id="btn-new" title="Create new">+ New</button>
+                                <div class="dropdown-menu" id="new-dropdown-menu">
+                                    <button data-type="folder">Folder</button>
+                                    <div class="context-divider"></div>
+                                    <button data-type="txt">Text (.txt)</button>
+                                    <button data-type="sh">Shell Script (.sh)</button>
+                                    <button data-type="py">Python (.py)</button>
+                                    <button data-type="json">JSON (.json)</button>
+                                    <button data-type="md">Markdown (.md)</button>
+                                    <button data-type="yml">YAML (.yml)</button>
+                                    <div class="context-divider"></div>
+                                    <button data-type="other">Other...</button>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-ghost" id="btn-upload" title="Upload file">Upload</button>
+                            <button class="btn btn-sm btn-ghost" id="btn-refresh" title="Refresh">↻</button>
+                        </div>
+                        <nav class="breadcrumb" id="file-breadcrumb"></nav>
+                        <div class="toolbar-group">
+                            <label class="toggle-hint">
+                                <input type="checkbox" id="show-hidden">
+                                Hidden
+                            </label>
+                            <input type="search" id="file-search" class="search-input" placeholder="Search files...">
+                        </div>
+                    </div>
+
+                    <div id="files-loading">Loading files...</div>
+                    <div id="files-empty" class="empty-state" style="display:none;">This directory is empty.</div>
+
+                    <div class="table-wrapper" id="files-table-wrapper" style="display:none;">
+                        <table class="data-table file-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-name">Name</th>
+                                    <th class="col-size">Size</th>
+                                    <th class="col-modified">Modified</th>
+                                    <th class="col-perms">Permissions</th>
+                                    <th class="col-owner">Owner</th>
+                                    <th class="col-group">Group</th>
+                                </tr>
+                            </thead>
+                            <tbody id="files-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal" id="editor-modal" style="display:none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="editor-title">Edit File</h3>
+                <button class="btn btn-ghost btn-sm" id="editor-close">✕</button>
+            </div>
+            <textarea id="editor-textarea" class="file-editor" spellcheck="false"></textarea>
+            <div class="modal-footer">
+                <span id="editor-status" class="detail"></span>
+                <button class="btn btn-primary" id="editor-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="upload-modal" style="display:none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Upload File</h3>
+                <button class="btn btn-ghost btn-sm" id="upload-close">✕</button>
+            </div>
+            <input type="file" id="upload-input">
+            <div class="modal-footer">
+                <span id="upload-status" class="detail"></span>
+                <button class="btn btn-primary" id="upload-submit">Upload</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="prompt-modal" style="display:none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header">
+                <h3 id="prompt-title">Prompt</h3>
+                <button class="btn btn-ghost btn-sm" id="prompt-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="prompt-message" class="modal-hint"></p>
+                <input type="text" id="prompt-input" class="full-width">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="prompt-cancel">Cancel</button>
+                <button class="btn btn-primary" id="prompt-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirm-modal" style="display:none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header">
+                <h3 id="confirm-title">Confirm</h3>
+                <button class="btn btn-ghost btn-sm" id="confirm-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message" class="modal-hint"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+                <button class="btn btn-danger" id="confirm-ok">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="context-menu" id="context-menu" style="display:none;">
+        <button data-action="open">Open</button>
+        <button data-action="edit">Edit</button>
+        <button data-action="download">Download</button>
+        <button data-action="extract">Extract here</button>
+        <div class="context-divider"></div>
+        <button data-action="compress">Compress…</button>
+        <button data-action="copy">Copy</button>
+        <button data-action="move">Move</button>
+        <button data-action="rename">Rename</button>
+        <div class="context-divider"></div>
+        <button data-action="delete" class="danger">Delete</button>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/files.js"></script>
+</body>
+</html>

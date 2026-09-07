@@ -1,0 +1,53 @@
+name: NexusIOS
+options:
+  bundleIdPrefix: com.nexus
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: en
+  defaultConfig: Release
+targets:
+  NexusIOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: NexusIOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nexus.NexusIOS
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        INFOPLIST_FILE: NexusIOS/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: NexusIOS/Info.plist
+      properties:
+        CFBundleDisplayName: Nexus
+        UILaunchScreen: {}
+        UIRequiresFullScreen: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+  NexusIOSUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: NexusIOSUITests
+    dependencies:
+      - target: NexusIOS
+    settings:
+      base:
+        TEST_TARGET_NAME: NexusIOS
+        PRODUCT_BUNDLE_IDENTIFIER: com.nexus.NexusIOSUITests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  NexusIOS:
+    build:
+      targets:
+        NexusIOS: all
+        NexusIOSUITests: [test]
+    test:
+      targets:
+        - NexusIOSUITests

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services | Nexus Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="brand">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+                    <h1 class="page-title">Services</h1>
+                </div>
+                <div class="user-menu">
+                    <span id="current-user">...</span>
+                </div>
+            </header>
+            <main class="page-body">
+                <div class="page-header">
+                    <h1>System Services</h1>
+                    <p>Manage and monitor systemd services.</p>
+                </div>
+
+                <div class="card">
+                    <div class="toolbar">
+                        <input type="text" id="service-search" class="search-input" placeholder="Search services...">
+                        <label style="display:flex;align-items:center;gap:0.5rem;color:var(--text-muted);font-size:0.9rem;">
+                            <input type="checkbox" id="show-system-services">
+                            Show system services
+                        </label>
+                    </div>
+
+                    <div class="filter-tabs" id="service-filters">
+                        <button class="filter-tab active" data-filter="all">All</button>
+                        <button class="filter-tab" data-filter="applications">Applications</button>
+                        <button class="filter-tab" data-filter="running">Running</button>
+                        <button class="filter-tab" data-filter="failed">Failed</button>
+                        <button class="filter-tab" data-filter="inactive">Inactive</button>
+                    </div>
+
+                    <div id="services-loading" style="padding:1rem 0;">
+                        <span class="spinner"></span> Loading services...
+                    </div>
+
+                    <div class="table-container" id="services-table-container" style="display:none;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Status</th>
+                                    <th>Enabled</th>
+                                    <th>PID</th>
+                                    <th>Memory</th>
+                                    <th>CPU</th>
+                                </tr>
+                            </thead>
+                            <tbody id="services-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="services-empty" class="empty-state" style="display:none;">
+                        No services match the current filters.
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/services.js"></script>
+</body>
+</html>

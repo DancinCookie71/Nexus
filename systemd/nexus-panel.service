@@ -1,0 +1,28 @@
+[Unit]
+Description=Nexus Panel
+After=network.target
+
+[Service]
+Type=simple
+User=nexus
+Group=nexus
+SupplementaryGroups=systemd-journal adm disk
+WorkingDirectory=/opt/nexus-panel/backend
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+EnvironmentFile=/opt/nexus-panel/backend/.env
+# --proxy-headers is safe here: only localhost reverse proxies are trusted.
+ExecStart=/opt/nexus-panel/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=127.0.0.1,::1
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/opt/nexus-panel/backend/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

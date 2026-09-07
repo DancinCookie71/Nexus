@@ -1,0 +1,3 @@
+# Allow the Nexus Panel service user to run smartctl for drive health checks.
+# Replace "nexus" with your panel service user if you chose a different one.
+nexus ALL=(root) NOPASSWD: /usr/sbin/smartctl
