@@ -79,8 +79,10 @@ final class NexusWebSocket: NSObject, URLSessionWebSocketDelegate {
                 switch message {
                 case .string(let text):
                     self.delegate?.webSocketDidReceiveMessage(text)
-                case .data:
-                    break
+                case .data(let data):
+                    if let text = String(data: data, encoding: .utf8) {
+                        self.delegate?.webSocketDidReceiveMessage(text)
+                    }
                 case .binary(let data):
                     if let text = String(data: data, encoding: .utf8) {
                         self.delegate?.webSocketDidReceiveMessage(text)

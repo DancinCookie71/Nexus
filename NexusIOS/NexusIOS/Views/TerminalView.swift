@@ -57,7 +57,7 @@ struct TerminalHostView: UIViewRepresentable {
         terminal.nativeBackgroundColor = UIColor.black
         terminal.nativeForegroundColor = UIColor(red: 0.3, green: 0.85, blue: 0.4, alpha: 1)
         viewModel.onOutput = { [weak terminal] text in
-            terminal?.feed(byteSource: Array(text.utf8)[...])
+            terminal?.feed(byteArray: Array(text.utf8))
         }
         return terminal
     }
@@ -77,19 +77,36 @@ struct TerminalHostView: UIViewRepresentable {
 
         func send(source: SwiftTerm.TerminalView, data: ArraySlice<UInt8>) {
             let bytes = Array(data)
-            if let text = String(bytes: bytes, encoding: .utf8) {
-                viewModel.sendInput(text)
+            guard let text = String(bytes: bytes, encoding: .utf8) else { return }
+            Task { @MainActor in
+                self.viewModel.sendInput(text)
             }
         }
 
-        func terminalView(_ view: SwiftTerm.TerminalView, didChangeTerminalSize size: CGSize, source: SwiftTerm.TerminalView) {
-            viewModel.sendResize(rows: Int(size.height), cols: Int(size.width))
+        func scrolled(source: SwiftTerm.TerminalView, position: Double) {}
+
+        func sizeChanged(source: SwiftTerm.TerminalView, newCols: Int, newRows: Int) {
+            Task { @MainActor in
+                self.viewModel.sendResize(rows: newRows, cols: newCols)
+            }
         }
 
-        func terminalView(_ view: SwiftTerm.TerminalView, setTerminalIconTitle source: SwiftTerm.TerminalView, title: String) {}
+        func setTerminalTitle(source: SwiftTerm.TerminalView, title: String) {}
 
-        func terminalView(_ view: SwiftTerm.TerminalView, rangeChanged range: Range<String.Index>, source: SwiftTerm.TerminalView) {}
+        func hostCurrentDirectoryUpdate(source: SwiftTerm.TerminalView, directory: String?) {}
 
-        func scrolled(source: SwiftTerm.TerminalView, position: Double) {}
+        func requestOpenLink(source: SwiftTerm.TerminalView, link: String, params: [String: String]) {
+            Task { @MainActor in
+                if let url = URL(string: link) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        }
+
+        func clipboardCopy(source: SwiftTerm.TerminalView, content: Data) {
+            UIPasteboard.general.setData(content)
+        }
+
+        func rangeChanged(source: SwiftTerm.TerminalView, startY: Int, endY: Int) {}
     }
 }
