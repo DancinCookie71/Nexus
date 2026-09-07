@@ -7,6 +7,7 @@ struct LoginView: View {
     @State private var username = ""
     @State private var password = ""
     @State private var showPassword = false
+    @State private var rememberServer = true
     @State private var isLoading = false
     @State private var errorMessage: String?
 
@@ -135,6 +136,15 @@ struct LoginView: View {
                 }
                 .buttonStyle(.plain)
             }
+            Divider()
+            HStack {
+                Image(systemName: "square.and.arrow.down.fill")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+                Toggle("Save server on every launch", isOn: $rememberServer)
+                    .font(.footnote)
+                    .tint(.indigo)
+            }
         }
     }
 
@@ -179,7 +189,12 @@ struct LoginView: View {
         errorMessage = nil
         Task {
             do {
-                try await appState.login(username: username, password: password, serverURL: serverURL)
+                try await appState.login(
+                    username: username,
+                    password: password,
+                    serverURL: serverURL,
+                    rememberServer: rememberServer
+                )
                 Haptics.medium()
             } catch let err as NexusError {
                 errorMessage = err.localizedDescription

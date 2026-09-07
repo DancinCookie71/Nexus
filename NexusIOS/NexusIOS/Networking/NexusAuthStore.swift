@@ -9,11 +9,7 @@ final class NexusAuthStore: ObservableObject {
     @Published private(set) var token: String?
     private var tokenExpiry: Date?
 
-    @Published var serverURL: String {
-        didSet {
-            try? saveServerURL(serverURL)
-        }
-    }
+    @Published var serverURL: String
 
     private init() {
         self.token = (try? KeychainHelper.shared.read(account: tokenAccount)).flatMap { String(data: $0, encoding: .utf8) }
@@ -22,7 +18,7 @@ final class NexusAuthStore: ObservableObject {
            let interval = TimeInterval(string) {
             self.tokenExpiry = Date(timeIntervalSince1970: interval)
         }
-        self.serverURL = (try? KeychainHelper.shared.read(account: serverAccount)).flatMap { String(data: $0, encoding: .utf8) } ?? "https://nexus.example.com"
+        self.serverURL = (try? KeychainHelper.shared.read(account: serverAccount)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
     }
 
     var isLoggedIn: Bool {
@@ -49,8 +45,13 @@ final class NexusAuthStore: ObservableObject {
         self.tokenExpiry = nil
     }
 
-    func saveServerURL(_ url: String) throws {
-        guard let data = url.data(using: .utf8) else { return }
-        try KeychainHelper.shared.save(data, account: serverAccount)
+    func saveServerURL(_ url: String, remember: Bool = true) throws {
+        self.serverURL = url
+        if remember {
+            guard let data = url.data(using: .utf8) else { return }
+            try KeychainHelper.shared.save(data, account: serverAccount)
+        } else {
+            try? KeychainHelper.shared.delete(account: serverAccount)
+        }
     }
 }

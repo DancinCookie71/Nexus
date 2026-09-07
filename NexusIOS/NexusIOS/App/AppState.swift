@@ -38,9 +38,9 @@ final class AppState: ObservableObject {
         }
     }
 
-    func login(username: String, password: String, serverURL: String? = nil) async throws {
+    func login(username: String, password: String, serverURL: String? = nil, rememberServer: Bool = true) async throws {
         if let serverURL {
-            try NexusAuthStore.shared.saveServerURL(serverURL)
+            try NexusAuthStore.shared.saveServerURL(serverURL, remember: rememberServer)
         }
         let response = try await NexusAPI.shared.login(username: username, password: password)
         try NexusAuthStore.shared.saveToken(response.accessToken, expiresAt: response.expiresAt)
