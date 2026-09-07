@@ -57,7 +57,7 @@ struct TerminalHostView: UIViewRepresentable {
         terminal.nativeBackgroundColor = UIColor.black
         terminal.nativeForegroundColor = UIColor(red: 0.3, green: 0.85, blue: 0.4, alpha: 1)
         viewModel.onOutput = { [weak terminal] text in
-            terminal?.feed(byteArray: Array(text.utf8))
+            terminal?.feed(byteArray: Array(text.utf8)[...])
         }
         return terminal
     }
@@ -104,7 +104,7 @@ struct TerminalHostView: UIViewRepresentable {
         }
 
         func clipboardCopy(source: SwiftTerm.TerminalView, content: Data) {
-            UIPasteboard.general.setData(content)
+            UIPasteboard.general.string = String(data: content, encoding: .utf8)
         }
 
         func rangeChanged(source: SwiftTerm.TerminalView, startY: Int, endY: Int) {}
